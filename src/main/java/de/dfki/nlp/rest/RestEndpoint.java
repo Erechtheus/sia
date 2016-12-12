@@ -3,6 +3,8 @@ package de.dfki.nlp.rest;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.Stats;
+import de.dfki.nlp.rest.exceptions.BaseException;
+import de.dfki.nlp.rest.exceptions.PayloadException;
 import de.dfki.nlp.rest.exceptions.UnsupportedMethodException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
@@ -20,12 +22,16 @@ public class RestEndpoint {
     JmsTemplate jmsTemplate;
 
     @PostMapping("/call")
-    public Response getAnnotations(@RequestBody @Valid ServerRequest serverRequest) throws UnsupportedMethodException {
+    public Response getAnnotations(@RequestBody @Valid ServerRequest serverRequest) throws BaseException {
 
         // TODO validate the object further
 
         switch (serverRequest.getMethod()) {
             case getAnnotations:
+
+                if(serverRequest.getParameters() == null) {
+                    throw new PayloadException("Request Parameter not set");
+                }
 
                 // send
                 jmsTemplate.convertAndSend("input", serverRequest, message1 -> {
@@ -37,7 +43,7 @@ public class RestEndpoint {
             case getState:
                 return new Response(200, true, "", new Stats(ZonedDateTime.now()));
             default:
-                throw new UnsupportedMethodException();
+                throw new UnsupportedMethodException("Don't know how to handle " + serverRequest.getMethod());
         }
 
     }

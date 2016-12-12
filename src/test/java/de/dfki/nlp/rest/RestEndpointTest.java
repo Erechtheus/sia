@@ -1,6 +1,6 @@
 package de.dfki.nlp.rest;
 
-import de.dfki.nlp.domain.rest.Response;
+import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,9 +26,11 @@ public class RestEndpointTest {
         ServerRequest serverRequest = new ServerRequest();
         serverRequest.setMethod(ServerRequest.Method.getAnnotations);
 
-        ResponseEntity<Response> response = restTemplate.postForEntity("/call", serverRequest, Response.class);
+        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("/call", serverRequest, ErrorResponse.class);
 
-        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().isSuccess()).isFalse();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getErrorCode()).isEqualTo("1");
 
     }
 
