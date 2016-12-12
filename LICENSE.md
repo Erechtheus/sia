@@ -1,4 +1,4 @@
-Copyright [2016] [Johannes Kirschnick and Philippe Thomas]
+Copyright 2016 by Johannes Kirschnick and Philippe Thomas
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
