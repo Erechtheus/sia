@@ -3,6 +3,7 @@ package de.dfki.nlp.rest;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.rest.exceptions.UnsupportedMethodException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +16,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public ErrorResponse handleException(Exception e) {
         log.error("Error",e);
-        return new ErrorResponse(400, false, "", e.getMessage(), "1");
+
+        String errorCode = "1";
+        if(e instanceof HttpRequestMethodNotSupportedException) {
+            errorCode = "2";
+        }
+
+        return new ErrorResponse(400, false, "", e.getMessage(), errorCode);
     }
 
     @ExceptionHandler(value = UnsupportedMethodException.class)

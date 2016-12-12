@@ -1,10 +1,14 @@
 package de.dfki.nlp.domain.rest;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.List;
 
 @Data
+@ToString
 public class ServerRequest {
 
     String name;
@@ -14,7 +18,8 @@ public class ServerRequest {
     Documents parameters;
 
     @Data
-    private static class Documents {
+    @ToString
+    public static class Documents {
         List<Document> documents;
         List<String> types;
         String expired;
@@ -22,7 +27,10 @@ public class ServerRequest {
     }
 
     @Data
-    private static class Document {
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @ToString
+    public static class Document {
         String document_id;
         String source;
     }

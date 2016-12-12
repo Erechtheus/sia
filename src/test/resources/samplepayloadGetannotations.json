@@ -1,0 +1,16 @@
+{
+  "name":"BeCalm",
+  "method":"getAnnotations",
+  "becalm_key":"616c202a947a0b9fed34",
+  "custom_parameters" :{"example":true},
+  "parameters" : {
+    "documents":[
+      {"document_id":"CA2073855C","source":"Patent server"},
+      {"document_id":"BC1403855C","source":"PMC"},
+      {"document_id":"BC1403854C","source":"PUBMED"}
+    ],
+    "types" : ["Identifier","Family"],
+    "expired": "2030-10-22 20:35",
+    "communication_id":1581
+  }
+}

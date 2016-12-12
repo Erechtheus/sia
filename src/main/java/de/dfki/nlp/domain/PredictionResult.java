@@ -1,6 +1,7 @@
 package de.dfki.nlp.domain;
 
 import com.fasterxml.jackson.annotation.*;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Map;
         "type",
         "database_id"
 })
+@ToString
 public class PredictionResult {
 
     /**

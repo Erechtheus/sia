@@ -1,0 +1,7 @@
+{
+   "name":"BeCalm",
+   "method":"getState",
+   "becalm_key":"616c202a947a0b9fed34",
+   "custom_parameters" :{"example":true},
+   "parameters" : {}
+}
