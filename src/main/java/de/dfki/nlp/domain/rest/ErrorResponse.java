@@ -12,7 +12,7 @@ public class ErrorResponse {
     int status;
     boolean success = false;
 
-    String becalm_key;
+    String key;
 
     String message;
     String errorCode;

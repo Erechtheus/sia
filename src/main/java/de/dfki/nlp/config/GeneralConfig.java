@@ -28,4 +28,5 @@ public class GeneralConfig {
         jaxb2RootElementHttpMessageConverter.setSupportDtd(true);
         return jaxb2RootElementHttpMessageConverter;
     }
+
 }

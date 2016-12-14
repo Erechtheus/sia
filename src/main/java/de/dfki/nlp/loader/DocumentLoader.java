@@ -9,6 +9,7 @@ import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -34,28 +35,32 @@ public class DocumentLoader {
 
                 log.info("Downloading pubmed {}", document.getDocument_id());
 
-                PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
-                        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={id}&retmode=xml",
-                        PubmedArticleSet.class, document.getDocument_id());
+                try {
+                    PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
+                            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={id}&retmode=xml",
+                            PubmedArticleSet.class, document.getDocument_id());
 
-                // now we get article
-                Object first = Iterables.getOnlyElement(pubmedArticleSet.getPubmedArticleOrPubmedBookArticle());
+                    // now we get article
+                    Object first = Iterables.getOnlyElement(pubmedArticleSet.getPubmedArticleOrPubmedBookArticle());
 
-                String titleText = null;
-                String abstractText = null;
-                if (first instanceof PubmedArticle) {
-                    PubmedArticle pubmedArticle = (PubmedArticle) first;
+                    String titleText = null;
+                    String abstractText = null;
+                    if (first instanceof PubmedArticle) {
+                        PubmedArticle pubmedArticle = (PubmedArticle) first;
 
-                    // get abstract and title
-                    Abstract anAbstract = pubmedArticle.getMedlineCitation().getArticle().getAbstract();
-                    if (anAbstract != null) {
-                        List<AbstractText> abstracts = anAbstract.getAbstractText();
-                        abstractText = abstracts.stream().map(AbstractText::getvalue).collect(Collectors.joining("\n"));
+                        // get abstract and title
+                        Abstract anAbstract = pubmedArticle.getMedlineCitation().getArticle().getAbstract();
+                        if (anAbstract != null) {
+                            List<AbstractText> abstracts = anAbstract.getAbstractText();
+                            abstractText = abstracts.stream().map(AbstractText::getvalue).collect(Collectors.joining("\n"));
+                        }
+                        titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
                     }
-                    titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
-                }
 
-                parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
+                    parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
+                } catch (RestClientException e) {
+                    log.error("Error retrieving doc from server", e);
+                }
 
                 break;
 
