@@ -7,6 +7,7 @@ import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentLoader;
 import de.hu.berlin.wbi.objects.MutationMention;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SpringBootApplication
 @Slf4j
@@ -60,24 +62,40 @@ public class SethTipsApplication implements CommandLineRunner {
                 )
                 .transform(ServerRequest.Document.class, source -> documentLoader.load(source))
                 .transform(ParsedInputText.class, payload -> {
-                    if(payload.getDocumentID() == null) return Collections.emptyList();
+                    if (payload.getDocumentID() == null) return Collections.emptyList();
 
                     // TODO handle SETH for title and abstract
 
+                    List<MutationMention> mutationsTitle = Collections.emptyList();
+                    List<MutationMention> mutationsAbstract = Collections.emptyList();
+
                     log.info("Parsing");
-                    List<MutationMention> mutations = SETH_THREAD_LOCAL.get().findMutations(payload.getTitleText());
+                    if (payload.getTitleText() != null) {
+                        mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitleText());
+                    }
+                    if (payload.getAbstractText() != null) {
+                        mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
+                    }
                     log.info("Done parsing");
 
                     // transform
 
-                    return mutations.stream().map(m -> {
+                    Stream<Pair<MutationMention, PredictionResult.Section>> title = mutationsTitle.stream().map(m -> Pair.of(m, PredictionResult.Section.T));
+                    Stream<Pair<MutationMention, PredictionResult.Section>> abstractT = mutationsAbstract.stream().map(m -> Pair.of(m, PredictionResult.Section.A));
+
+
+                    return Stream.concat(title, abstractT).map(pair -> {
                         PredictionResult predictionResult = new PredictionResult();
                         predictionResult.setDocumentId(payload.getDocumentID());
 
-                        predictionResult.setInit(m.getStart());
-                        predictionResult.setEnd(m.getEnd());
-                        predictionResult.setAnnotatedText(m.getText());
-                        predictionResult.setSection(PredictionResult.Section.T);
+                        MutationMention mutationMentions = pair.getKey();
+
+                        predictionResult.setInit(mutationMentions.getStart());
+                        predictionResult.setEnd(mutationMentions.getEnd());
+                        predictionResult.setAnnotatedText(mutationMentions.getText());
+                        predictionResult.setSection(pair.getValue());
+                        predictionResult.setType(mutationMentions.getType().name());
+                        predictionResult.setDocumentId(payload.getDocumentID());
 
                         return predictionResult;
                     }).collect(Collectors.toList());
@@ -123,7 +141,7 @@ public class SethTipsApplication implements CommandLineRunner {
         ServerRequest message = new ServerRequest();
         ServerRequest.Documents parameters = new ServerRequest.Documents();
         parameters.setDocuments(Lists.newArrayList(
-                new ServerRequest.Document("BC1403854C", "PUBMED")
+                new ServerRequest.Document("24218123", "PUBMED")
                 )
         );
         message.setParameters(parameters);

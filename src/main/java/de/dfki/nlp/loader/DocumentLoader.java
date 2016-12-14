@@ -1,11 +1,12 @@
 package de.dfki.nlp.loader;
 
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Iterables;
 import de.dfki.nlp.domain.ParsedInputText;
-import de.dfki.nlp.domain.pubmed.domain.Abstract;
-import de.dfki.nlp.domain.pubmed.domain.AbstractText;
-import de.dfki.nlp.domain.pubmed.domain.PubmedArticle;
-import de.dfki.nlp.domain.pubmed.domain.PubmedArticleSet;
+import de.dfki.nlp.domain.pubmed.Abstract;
+import de.dfki.nlp.domain.pubmed.AbstractText;
+import de.dfki.nlp.domain.pubmed.PubmedArticle;
+import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,12 +22,16 @@ public class DocumentLoader {
 
     private final RestTemplate restTemplate;
 
+    XmlMapper mapper = new XmlMapper();
+
     public DocumentLoader(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public ParsedInputText load(ServerRequest.Document document) {
 
+        ParsedInputText parsedInputText = new ParsedInputText(null, null, null);
+        ;
         switch (document.getSource().toLowerCase(Locale.ENGLISH)) {
             case "pubmed":
 
@@ -53,16 +58,21 @@ public class DocumentLoader {
                     titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
                 }
 
-                ParsedInputText parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
-                log.info("extracted {}", parsedInputText.toString());
-                return parsedInputText;
+                parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
+
+                break;
 
             default:
                 log.error("Don't know how to handle: {}", document.getSource());
+                return parsedInputText;
 
         }
 
-        return new ParsedInputText(null, null, null);
+
+        log.info("extracted {}", parsedInputText.toString());
+        return parsedInputText;
+
+
     }
 
 }
