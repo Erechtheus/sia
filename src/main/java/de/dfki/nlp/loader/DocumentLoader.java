@@ -1,6 +1,5 @@
 package de.dfki.nlp.loader;
 
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.collect.Iterables;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.pubmed.Abstract;
@@ -21,8 +20,6 @@ import java.util.stream.Collectors;
 public class DocumentLoader {
 
     private final RestTemplate restTemplate;
-
-    XmlMapper mapper = new XmlMapper();
 
     public DocumentLoader(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
