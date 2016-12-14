@@ -45,7 +45,7 @@ public class SethTipsApplication implements CommandLineRunner {
     DocumentLoader documentLoader;
 
     // give each thread a new instance
-    private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(SETH::new);
+    private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(()->new SETH("resources/mutations.txt", true, true, false));
 
     @Bean
     IntegrationFlow flow(ConnectionFactory connectionFactory) {
