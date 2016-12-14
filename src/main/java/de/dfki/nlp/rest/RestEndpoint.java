@@ -7,12 +7,14 @@ import de.dfki.nlp.rest.exceptions.BaseException;
 import de.dfki.nlp.rest.exceptions.PayloadException;
 import de.dfki.nlp.rest.exceptions.UnsupportedMethodException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @RestController
@@ -20,6 +22,10 @@ public class RestEndpoint {
 
     @Autowired
     JmsTemplate jmsTemplate;
+
+
+    @Value("${serverKey}")
+    String serverKey;
 
     @PostMapping("/call")
     public Response getAnnotations(@RequestBody @Valid ServerRequest serverRequest) throws BaseException {
@@ -29,7 +35,7 @@ public class RestEndpoint {
         switch (serverRequest.getMethod()) {
             case getAnnotations:
 
-                if(serverRequest.getParameters() == null) {
+                if (serverRequest.getParameters() == null) {
                     throw new PayloadException("Request Parameter not set");
                 }
 
@@ -39,9 +45,9 @@ public class RestEndpoint {
                     return message1;
                 });
 
-                return new Response(200, true, "", null);
+                return new Response(200, true, serverKey, null);
             case getState:
-                return new Response(200, true, "", new Stats(ZonedDateTime.now()));
+                return new Response(200, true, serverKey, new Stats(ZonedDateTime.now(ZoneId.of("Europe/Paris"))));
             default:
                 throw new UnsupportedMethodException("Don't know how to handle " + serverRequest.getMethod());
         }
