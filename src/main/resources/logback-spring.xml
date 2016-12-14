@@ -21,6 +21,7 @@
 	<springProfile name="cloud">
 		<root level="INFO">
 			<appender-ref ref="FILE"/>
+			<appender-ref ref="CONSOLE"/>
 		</root>
 	</springProfile>
 
