@@ -1,0 +1,5 @@
+---
+applications:
+  - name: seth-tips
+    buildpack: https://github.com/cloudfoundry/java-buildpack.git
+    path: target/seth-tips-0.0.1-SNAPSHOT.jar

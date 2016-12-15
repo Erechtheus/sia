@@ -20,6 +20,8 @@ import java.time.ZonedDateTime;
 @RestController
 public class RestEndpoint {
 
+    public static String COMMUNICATION_ID = "communication_id";
+
     @Autowired
     JmsTemplate jmsTemplate;
 
@@ -41,7 +43,7 @@ public class RestEndpoint {
 
                 // send
                 jmsTemplate.convertAndSend("input", serverRequest, message1 -> {
-                    message1.setIntProperty("communication_id", serverRequest.getParameters().getCommunication_id());
+                    message1.setIntProperty(COMMUNICATION_ID, serverRequest.getParameters().getCommunication_id());
                     return message1;
                 });
 
