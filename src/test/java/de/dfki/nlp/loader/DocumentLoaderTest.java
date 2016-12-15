@@ -23,7 +23,7 @@ public class DocumentLoaderTest {
     @Test
     public void testNotImplementedLoader() throws Exception {
 
-        ParsedInputText load = documentLoader.load(new ServerRequest.Document("BC1403855C", "PMC"));
+        ParsedInputText load = documentLoader.load(new ServerRequest.Document("BC1403855C", "Patent Server"));
 
         assertThat(load.getDocumentID()).isNull();
         assertThat(load.getTitleText()).isNull();
