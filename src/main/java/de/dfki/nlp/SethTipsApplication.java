@@ -17,12 +17,13 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.jms.Jms;
 import org.springframework.integration.dsl.support.Function;
-import org.springframework.integration.stream.CharacterStreamWritingMessageHandler;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import seth.SETH;
 
 import javax.jms.ConnectionFactory;
@@ -97,19 +98,22 @@ public class SethTipsApplication implements CommandLineRunner {
                         predictionResult.setType(mutationMentions.getType().name());
                         predictionResult.setDocumentId(payload.getDocumentID());
 
+                        predictionResult.setScore(1d);
+
                         return predictionResult;
                     }).collect(Collectors.toList());
 
                 })
                 .aggregate()
-                .handle(CharacterStreamWritingMessageHandler.stdout())
-/*                // TODO here we would post the result
-              //  .handleWithAdapter(adapters -> adapters.http("http://"))
+               // .handle(CharacterStreamWritingMessageHandler.stdout())
+                // TODO here we would post the result
+              //  .handleWithAdapter(adapters -> adapters.http("http://"))7
                 .channel(new MessageChannel() {
                     @Override
                     public boolean send(Message<?> message) {
                         List<PredictionResult> payload = (List<PredictionResult>) message.getPayload();
                         log.info("Sending response direct with {} results \n For communication_id {}", payload.size(), message.getHeaders().get("communication_id"));
+                        log.info(payload.toString());
                         return true;
                     }
 
@@ -118,7 +122,7 @@ public class SethTipsApplication implements CommandLineRunner {
                         log.info("Sending response with timeout");
                         return true;
                     }
-                })*/
+                })
                 .get();
     }
 
