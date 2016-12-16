@@ -3,8 +3,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ##Project description
-Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task (http://www.becalm.eu/files/material/BioCreative.V.5_CFP.pdf)[TIPS].
-Annotations for mutation mentions are generated using (https://github.com/rockt/SETH)[SETH], and returned in JSON according to these  (http://www.becalm.eu/files/schemas/jsonSchema.json)[definitions]. 
+Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task [TIPS](http://www.becalm.eu/files/material/BioCreative.V.5_CFP.pdf).
+Annotations for mutation mentions are generated using [SETH](https://github.com/rockt/SETH), and returned in JSON according to these  [definitions](http://www.becalm.eu/files/schemas/jsonSchema.json). 
 
 
 ### getAnnotation
