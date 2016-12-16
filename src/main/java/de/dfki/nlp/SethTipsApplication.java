@@ -16,6 +16,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -42,7 +43,7 @@ import java.util.stream.Stream;
 @SpringBootApplication
 @Slf4j
 @EnableJms
-public class SethTipsApplication implements CommandLineRunner {
+public class SethTipsApplication {
 
     @Value("${apiKey}")
     String apiKey;
@@ -148,27 +149,26 @@ public class SethTipsApplication implements CommandLineRunner {
         return converter;
     }
 
-    @Autowired
-    JmsTemplate jmsTemplate;
+    @Bean
+    @Profile("!cloud")
+    CommandLineRunner commandLineRunner(JmsTemplate jmsTemplate) {
 
-    @Override
-    public void run(String... args) throws Exception {
+        return args -> {
+            ServerRequest message = new ServerRequest();
+            ServerRequest.Documents parameters = new ServerRequest.Documents();
+            parameters.setDocuments(Lists.newArrayList(
+                    new ServerRequest.Document("CA2073855C", "Patent Server"),
+                    new ServerRequest.Document("24218123", "PUBMED"),
+                    new ServerRequest.Document("BC1403855C", "PMC")
+                    )
+            );
+            message.setParameters(parameters);
 
-        ServerRequest message = new ServerRequest();
-        ServerRequest.Documents parameters = new ServerRequest.Documents();
-        parameters.setDocuments(Lists.newArrayList(
-                new ServerRequest.Document("CA2073855C", "Patent Server"),
-                new ServerRequest.Document("24218123", "PUBMED"),
-                new ServerRequest.Document("BC1403855C", "PMC")
-                )
-        );
-        message.setParameters(parameters);
-
-        jmsTemplate.convertAndSend("input", message, m -> {
-            m.setIntProperty("communication_id", 101);
-            return m;
-        });
-
+            jmsTemplate.convertAndSend("input", message, m -> {
+                m.setIntProperty("communication_id", -1);
+                return m;
+            });
+        };
 
     }
 
