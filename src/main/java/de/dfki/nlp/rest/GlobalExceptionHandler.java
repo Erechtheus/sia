@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @Value("${serverKey}")
-    String serverKey;
+    @Value("${apiKey}")
+    String apiKey;
 
     @ExceptionHandler(value = Exception.class)
     public ErrorResponse handleException(Exception e) {
@@ -31,13 +31,13 @@ public class GlobalExceptionHandler {
             errorCode = "2";
         }
 
-        return new ErrorResponse(400, false, serverKey, e.getMessage(), errorCode);
+        return new ErrorResponse(400, false, apiKey, e.getMessage(), errorCode);
     }
 
     @ExceptionHandler(value = BaseException.class)
     public ErrorResponse handleCustom(BaseException e) {
         log.error("Error", e);
-        return new ErrorResponse(400, false, serverKey, e.getMessage(), e.getErrorCode());
+        return new ErrorResponse(400, false, apiKey, e.getMessage(), e.getErrorCode());
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
                     }
                     return "Error for " + validationError.getObjectName();
                 }).collect(Collectors.joining(". "));
-        return new ErrorResponse(400, false, serverKey, message, "1");
+        return new ErrorResponse(400, false, apiKey, message, "1");
     }
 
 }  

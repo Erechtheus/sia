@@ -23,8 +23,8 @@ public class RestEndpoint {
     @Autowired
     JmsTemplate jmsTemplate;
 
-    @Value("${serverKey}")
-    String serverKey;
+    @Value("${apiKey}")
+    String apiKey;
 
     @Value("${server.version}")
     String version;
@@ -53,9 +53,9 @@ public class RestEndpoint {
                     return message1;
                 });
 
-                return new Response(200, true, serverKey, null);
+                return new Response(200, true, apiKey, null);
             case getState:
-                return new Response(200, true, serverKey, new ServerState(ServerState.State.Running, version, changes, max));
+                return new Response(200, true, apiKey, new ServerState(ServerState.State.Running, version, changes, max));
             default:
                 throw new UnsupportedMethodException("Don't know how to handle " + serverRequest.getMethod());
         }
