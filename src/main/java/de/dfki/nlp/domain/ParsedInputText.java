@@ -9,8 +9,8 @@ import lombok.ToString;
 @ToString
 public class ParsedInputText {
 
-    String documentID;
-    String titleText;
+    String externalId;
+    String title;
     String abstractText;
 
 }

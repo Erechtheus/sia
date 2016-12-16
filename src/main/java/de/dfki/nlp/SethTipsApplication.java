@@ -70,7 +70,7 @@ public class SethTipsApplication implements CommandLineRunner {
                 )
                 .transform(ServerRequest.Document.class, source -> documentLoader.load(source))
                 .transform(ParsedInputText.class, payload -> {
-                    if (payload.getDocumentID() == null) return Collections.emptyList();
+                    if (payload.getExternalId() == null) return Collections.emptyList();
 
                     // TODO handle SETH for title and abstract
 
@@ -78,8 +78,8 @@ public class SethTipsApplication implements CommandLineRunner {
                     List<MutationMention> mutationsAbstract = Collections.emptyList();
 
                     log.info("Parsing");
-                    if (payload.getTitleText() != null) {
-                        mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitleText());
+                    if (payload.getTitle() != null) {
+                        mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle());
                     }
                     if (payload.getAbstractText() != null) {
                         mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
@@ -94,7 +94,7 @@ public class SethTipsApplication implements CommandLineRunner {
 
                     return Stream.concat(title, abstractT).map(pair -> {
                         PredictionResult predictionResult = new PredictionResult();
-                        predictionResult.setDocumentId(payload.getDocumentID());
+                        predictionResult.setDocumentId(payload.getExternalId());
 
                         MutationMention mutationMentions = pair.getKey();
 
@@ -103,7 +103,7 @@ public class SethTipsApplication implements CommandLineRunner {
                         predictionResult.setAnnotatedText(mutationMentions.getText());
                         predictionResult.setSection(pair.getValue());
                         predictionResult.setType(mutationMentions.getType().name());
-                        predictionResult.setDocumentId(payload.getDocumentID());
+                        predictionResult.setDocumentId(payload.getExternalId());
 
                         predictionResult.setScore(1d);
 
@@ -119,6 +119,7 @@ public class SethTipsApplication implements CommandLineRunner {
                         .errorHandler(new ResponseErrorHandler() {
                             @Override
                             public boolean hasError(ClientHttpResponse response) throws IOException {
+                                // TODO this is not really an error .. just pretend it is one, so we can view the result
                                 return response.getRawStatusCode() != 20;
                             }
 
@@ -152,6 +153,7 @@ public class SethTipsApplication implements CommandLineRunner {
         ServerRequest message = new ServerRequest();
         ServerRequest.Documents parameters = new ServerRequest.Documents();
         parameters.setDocuments(Lists.newArrayList(
+                new ServerRequest.Document("CA2073855C", "Patent Server"),
                 new ServerRequest.Document("24218123", "PUBMED"),
                 new ServerRequest.Document("BC1403855C", "PMC")
                 )

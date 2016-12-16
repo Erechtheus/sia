@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 
@@ -78,7 +80,13 @@ public class RestEndpointTest {
         assertThat(response.getBody().isSuccess()).isTrue();
         assertThat(response.getBody().getStatus()).isEqualTo(200);
 
-        assertThat(response.getBody().getData()).hasFieldOrProperty("localtime");
+        assertThat(response.getBody().getData()).isInstanceOf(Map.class);
+        assertThat((Map<String,?>) response.getBody().getData())
+                .hasSize(4)
+                .containsKey("max_analizable_documents")
+                .containsKey("state")
+                .containsKey("version")
+                .containsKey("version_changes");
     }
 
 }

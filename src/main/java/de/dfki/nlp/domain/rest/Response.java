@@ -15,7 +15,7 @@ public class Response {
     boolean success = true;
     String key;
 
-    Stats data;
+    Object data;
 
 
 }

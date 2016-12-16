@@ -2,7 +2,7 @@ package de.dfki.nlp.rest;
 
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
-import de.dfki.nlp.domain.rest.Stats;
+import de.dfki.nlp.domain.rest.ServerState;
 import de.dfki.nlp.rest.exceptions.BaseException;
 import de.dfki.nlp.rest.exceptions.PayloadException;
 import de.dfki.nlp.rest.exceptions.UnsupportedMethodException;
@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 @RestController
 public class RestEndpoint {
@@ -25,9 +23,17 @@ public class RestEndpoint {
     @Autowired
     JmsTemplate jmsTemplate;
 
-
     @Value("${serverKey}")
     String serverKey;
+
+    @Value("${server.version}")
+    String version;
+
+    @Value("${server.changes}")
+    String changes;
+
+    @Value("${server.max:500}")
+    String max;
 
     @PostMapping("/call")
     public Response getAnnotations(@RequestBody @Valid ServerRequest serverRequest) throws BaseException {
@@ -49,7 +55,7 @@ public class RestEndpoint {
 
                 return new Response(200, true, serverKey, null);
             case getState:
-                return new Response(200, true, serverKey, new Stats(ZonedDateTime.now(ZoneId.of("Europe/Paris"))));
+                return new Response(200, true, serverKey, new ServerState(ServerState.State.Running, version, changes, max));
             default:
                 throw new UnsupportedMethodException("Don't know how to handle " + serverRequest.getMethod());
         }

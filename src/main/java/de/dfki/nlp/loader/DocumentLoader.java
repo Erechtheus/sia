@@ -9,6 +9,7 @@ import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +40,17 @@ public class DocumentLoader {
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
+
+    @Value("${server.pubmed.url}")
+    String pubmed;
+
+    @Value("${server.pmc.url}")
+    String pmcUrl;
+
+    @Value("${server.patent.url}")
+    String patent;
+
+
     public DocumentLoader(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -45,7 +58,7 @@ public class DocumentLoader {
     public ParsedInputText load(ServerRequest.Document document) {
 
         ParsedInputText parsedInputText = new ParsedInputText(null, null, null);
-        ;
+
         switch (document.getSource().toLowerCase(Locale.ENGLISH)) {
             case "pubmed":
 
@@ -53,10 +66,10 @@ public class DocumentLoader {
 
                 try {
                     PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
-                            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={id}&retmode=xml",
+                            pubmed,
                             PubmedArticleSet.class, document.getDocument_id());
 
-                    // now we get article
+                    // now we get the article
                     Object first = Iterables.getOnlyElement(pubmedArticleSet.getPubmedArticleOrPubmedBookArticle());
 
                     String titleText = null;
@@ -74,7 +87,7 @@ public class DocumentLoader {
                     }
 
                     parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
-                } catch (RestClientException e) {
+                } catch (RestClientException | NoSuchElementException | IllegalArgumentException | NullPointerException e) {
                     log.error("Error retrieving doc from server", e);
                 }
 
@@ -82,13 +95,15 @@ public class DocumentLoader {
 
             case "pmc":
 
-                String pmc = restTemplate.getForObject(
-                        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id={id}&retmode=xml",
-                        String.class, document.getDocument_id());
 
                 try {
-                    InputSource source = new InputSource(new StringReader(pmc));
 
+                    String pmc = restTemplate.getForObject(
+                            pmcUrl,
+                            String.class, document.getDocument_id());
+
+
+                    InputSource source = new InputSource(new StringReader(pmc));
 
                     DocumentBuilder db = dbf.newDocumentBuilder();
                     Document xmlDocument = db.parse(source);
@@ -103,12 +118,21 @@ public class DocumentLoader {
 
                     parsedInputText = new ParsedInputText(document.getDocument_id(), title, abstractT);
 
-                } catch (ParserConfigurationException | SAXException | IOException | XPathExpressionException e) {
-                    e.printStackTrace();
+                } catch (RestClientException | ParserConfigurationException | SAXException | IOException | XPathExpressionException | NullPointerException e) {
+                    log.error("Error retrieving pmc document", e);
                 }
 
                 break;
 
+            case "patent server":
+
+                try {
+                    parsedInputText = restTemplate.getForObject(patent, ParsedInputText.class, document.getDocument_id());
+                } catch (RestClientException e) {
+                    log.error("Error retrieving patent {}", document.getDocument_id(), e);
+                }
+
+                break;
 
             default:
                 log.error("Don't know how to handle: {}", document.getSource());
