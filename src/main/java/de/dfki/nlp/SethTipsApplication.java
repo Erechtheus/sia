@@ -3,6 +3,7 @@ package de.dfki.nlp;
 import com.google.common.collect.Lists;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.pubmed.Object;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentLoader;
 import de.hu.berlin.wbi.objects.MutationMention;
@@ -21,6 +22,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.jms.Jms;
 import org.springframework.integration.dsl.support.Function;
+import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
@@ -112,6 +114,8 @@ public class SethTipsApplication implements CommandLineRunner {
 
                 })
                 .aggregate()
+                // now merge the results by flattening
+                .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
                 .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
