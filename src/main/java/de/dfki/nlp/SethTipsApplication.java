@@ -3,7 +3,6 @@ package de.dfki.nlp;
 import com.google.common.collect.Lists;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
-import de.dfki.nlp.domain.pubmed.Object;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentLoader;
 import de.hu.berlin.wbi.objects.MutationMention;
