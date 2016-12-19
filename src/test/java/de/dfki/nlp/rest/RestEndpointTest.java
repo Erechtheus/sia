@@ -1,5 +1,7 @@
 package de.dfki.nlp.rest;
 
+import com.rabbitmq.client.ConnectionFactory;
+import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
@@ -7,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -26,8 +29,14 @@ public class RestEndpointTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @MockBean
+    MessagingConfig.ProcessingGateway processingGateway;
+
+    @MockBean
+    ConnectionFactory connectionFactory;
+
     @Test
-    public void getAnnotations() throws Exception {
+    public void getErrorAnnotations() throws Exception {
 
         ServerRequest serverRequest = new ServerRequest();
         serverRequest.setMethod(ServerRequest.Method.getAnnotations);

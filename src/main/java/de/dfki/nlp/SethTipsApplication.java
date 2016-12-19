@@ -1,6 +1,7 @@
 package de.dfki.nlp;
 
 import com.google.common.collect.Lists;
+import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.rest.ServerRequest;
@@ -9,6 +10,9 @@ import de.hu.berlin.wbi.objects.MutationMention;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -18,30 +22,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
+import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.jms.Jms;
+import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.transformer.GenericTransformer;
-import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
-import org.springframework.jms.support.converter.MessageConverter;
-import org.springframework.jms.support.converter.MessageType;
 import org.springframework.web.client.ResponseErrorHandler;
 import seth.SETH;
 
-import javax.jms.ConnectionFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SpringBootApplication
 @Slf4j
-@EnableJms
+@EnableIntegration
 public class SethTipsApplication {
 
     @Value("${apiKey}")
@@ -57,15 +56,20 @@ public class SethTipsApplication {
     // give each thread a new instance
     private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SETH("resources/mutations.txt", true, true, false));
 
+    @Value("${server.concurrentConsumer}")
+    int concurrentConsumer;
+
     @Bean
-    IntegrationFlow flow(ConnectionFactory connectionFactory) {
+    IntegrationFlow flow(ConnectionFactory connectionFactory, Queue input, Jackson2JsonMessageConverter messageConverter) {
         return IntegrationFlows
-                .from(Jms.messageDrivenChannelAdapter(connectionFactory)
-                        .configureListenerContainer(container ->
-                                container.sessionTransacted(true))
-                        .jmsMessageConverter(jacksonJmsMessageConverter()).destination("input"))
-                // set parallelism - anything larger than 1 gives parallelism
-                .channel(c -> c.executor(Executors.newFixedThreadPool(2)))
+                .from(
+                        Amqp.inboundAdapter(connectionFactory, input)
+                                // set parallelism - anything larger than 1 gives parallelism
+                                .concurrentConsumers(concurrentConsumer)
+                                .messageConverter(messageConverter)
+                                .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
+                )
+                .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                 .split((Function<ServerRequest, List<ServerRequest.Document>>) serverRequest ->
                         // split documents
                         serverRequest.getParameters().getDocuments()
@@ -73,8 +77,6 @@ public class SethTipsApplication {
                 .transform(ServerRequest.Document.class, source -> documentLoader.load(source))
                 .transform(ParsedInputText.class, payload -> {
                     if (payload.getExternalId() == null) return Collections.emptyList();
-
-                    // TODO handle SETH for title and abstract
 
                     List<MutationMention> mutationsTitle = Collections.emptyList();
                     List<MutationMention> mutationsAbstract = Collections.emptyList();
@@ -117,6 +119,7 @@ public class SethTipsApplication {
                 // now merge the results by flattening
                 .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
+                .handle((payload, headers) -> null)
                 .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
@@ -138,19 +141,10 @@ public class SethTipsApplication {
                 .get();
     }
 
-    ;
-
-    @Bean // Serialize message content to json using TextMessage
-    public MessageConverter jacksonJmsMessageConverter() {
-        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setTargetType(MessageType.TEXT);
-        converter.setTypeIdPropertyName("_type");
-        return converter;
-    }
 
     @Bean
     @Profile("!cloud")
-    CommandLineRunner commandLineRunner(JmsTemplate jmsTemplate) {
+    CommandLineRunner commandLineRunner(MessagingConfig.ProcessingGateway processingGateway) {
 
         return args -> {
             ServerRequest message = new ServerRequest();
@@ -161,12 +155,14 @@ public class SethTipsApplication {
                     new ServerRequest.Document("BC1403855C", "PMC")
                     )
             );
+
+            parameters.setCommunication_id(-1);
             message.setParameters(parameters);
 
-            jmsTemplate.convertAndSend("input", message, m -> {
-                m.setIntProperty("communication_id", -1);
-                return m;
-            });
+            // send one test message
+            processingGateway.sendForProcessing(message);
+
+
         };
 
     }

@@ -42,13 +42,13 @@ public class DocumentLoader {
 
 
     @Value("${server.pubmed.url}")
-    String pubmed;
+    String pubmedUrl;
 
     @Value("${server.pmc.url}")
     String pmcUrl;
 
     @Value("${server.patent.url}")
-    String patent;
+    String patentUrl;
 
 
     public DocumentLoader(RestTemplate restTemplate) {
@@ -66,7 +66,7 @@ public class DocumentLoader {
 
                 try {
                     PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
-                            pubmed,
+                            pubmedUrl,
                             PubmedArticleSet.class, document.getDocument_id());
 
                     // now we get the article
@@ -88,7 +88,7 @@ public class DocumentLoader {
 
                     parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
                 } catch (RestClientException | NoSuchElementException | IllegalArgumentException | NullPointerException e) {
-                    log.error("Error retrieving doc from server", e);
+                    log.error("Error retrieving pubmed document from server", e);
                 }
 
                 break;
@@ -127,7 +127,7 @@ public class DocumentLoader {
             case "patent server":
 
                 try {
-                    parsedInputText = restTemplate.getForObject(patent, ParsedInputText.class, document.getDocument_id());
+                    parsedInputText = restTemplate.getForObject(patentUrl, ParsedInputText.class, document.getDocument_id());
                 } catch (RestClientException e) {
                     log.error("Error retrieving patent {}", document.getDocument_id(), e);
                 }
