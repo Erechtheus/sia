@@ -119,7 +119,6 @@ public class SethTipsApplication {
                 // now merge the results by flattening
                 .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
-                .handle((payload, headers) -> null)
                 .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
@@ -132,8 +131,8 @@ public class SethTipsApplication {
 
                             @Override
                             public void handleError(ClientHttpResponse response) throws IOException {
-                                System.out.println(response.getStatusText());
-                                System.out.println(IOUtils.toString(response.getBody()));
+                               log.info(response.getStatusText());
+                               log.info(IOUtils.toString(response.getBody()));
                             }
                         })
                         .uriVariable("apikey", "'" + apiKey + "'")
