@@ -5,6 +5,7 @@ import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.rest.exceptions.BaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -38,6 +39,12 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleCustom(BaseException e) {
         log.error("Error", e);
         return new ErrorResponse(400, false, apiKey, e.getMessage(), e.getErrorCode());
+    }
+
+    @ExceptionHandler(value = HttpMessageConversionException.class)
+    public ErrorResponse handleHTTPError(HttpMessageConversionException e) {
+        log.error("Error", e);
+        return new ErrorResponse(400, false, apiKey, e.getMessage(), "1");
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
