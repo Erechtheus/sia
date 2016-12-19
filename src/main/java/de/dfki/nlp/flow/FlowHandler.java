@@ -6,7 +6,6 @@ import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentFetcher;
 import de.hu.berlin.wbi.objects.MutationMention;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -15,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -23,10 +21,8 @@ import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResponseErrorHandler;
 import seth.SETH;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,7 +53,7 @@ public class FlowHandler {
         return IntegrationFlows
                 .from(
                         Amqp.inboundAdapter(connectionFactory, input)
-                                // set parallelism - anything larger than 1 gives parallelism
+                                // set concurrentConsumers - anything larger than 1 gives parallelism per request
                                 .concurrentConsumers(concurrentConsumer)
                                 .messageConverter(messageConverter)
                                 .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
@@ -67,8 +63,8 @@ public class FlowHandler {
                         // split documents
                         serverRequest.getParameters().getDocuments()
                 )
-                .transform(ServerRequest.Document.class, source -> documentFetcher.load(source))
-                .transform(ParsedInputText.class, this::performAnalysis)
+                .transform(ServerRequest.Document.class, documentFetcher::load)
+                .transform(ParsedInputText.class, this::performAnnotation)
                 .aggregate()
                 // now merge the results by flattening
                 .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
@@ -76,7 +72,7 @@ public class FlowHandler {
                 .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
-                        .errorHandler(new ResponseErrorHandler() {
+/*                        .errorHandler(new ResponseErrorHandler() {
                             @Override
                             public boolean hasError(ClientHttpResponse response) throws IOException {
                                 // TODO this is not really an error .. just pretend it is one, so we can view the result
@@ -88,14 +84,14 @@ public class FlowHandler {
                                 log.info(response.getStatusText());
                                 log.info(IOUtils.toString(response.getBody()));
                             }
-                        })
+                        })*/
                         .uriVariable("apikey", "'" + apiKey + "'")
                         .uriVariable("communicationId", "headers['communication_id']"))
                 .get();
     }
 
 
-    private List<PredictionResult> performAnalysis(ParsedInputText payload) {
+    private List<PredictionResult> performAnnotation(ParsedInputText payload) {
 
             if (payload.getExternalId() == null) return Collections.emptyList();
 

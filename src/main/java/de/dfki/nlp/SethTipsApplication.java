@@ -43,7 +43,6 @@ public class SethTipsApplication {
             // send one test message
             processingGateway.sendForProcessing(message);
 
-
         };
 
     }
