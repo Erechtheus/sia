@@ -1,12 +1,12 @@
 package de.dfki.nlp.rest;
 
 import de.dfki.nlp.config.MessagingConfig;
+import de.dfki.nlp.domain.exceptions.BaseException;
+import de.dfki.nlp.domain.exceptions.PayloadException;
+import de.dfki.nlp.domain.exceptions.UnsupportedMethodException;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerState;
-import de.dfki.nlp.rest.exceptions.BaseException;
-import de.dfki.nlp.rest.exceptions.PayloadException;
-import de.dfki.nlp.rest.exceptions.UnsupportedMethodException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;

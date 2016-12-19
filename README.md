@@ -7,6 +7,14 @@ Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task
 Annotations for mutation mentions are generated using [SETH](https://github.com/rockt/SETH), and returned in JSON according to these  [definitions](http://www.becalm.eu/files/schemas/jsonSchema.json). 
 
 
+## Getting Started
+
+### Note
+The system uses RabbitMQ to load balance, so make sure it is running locally before starting the application, by following the installation guide [How to install](https://www.rabbitmq.com/download.html)
+
+    ./mvnw spring-boot:run
+
+
 ### getAnnotation
 
     curl -vX POST http://localhost:8080/call -d @src/test/resources/samplepayloadGetannotations.json --header "Content-Type: application/json"

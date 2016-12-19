@@ -1,8 +1,8 @@
 package de.dfki.nlp.rest;
 
 import com.google.common.base.Joiner;
+import de.dfki.nlp.domain.exceptions.BaseException;
 import de.dfki.nlp.domain.rest.ErrorResponse;
-import de.dfki.nlp.rest.exceptions.BaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.HttpMessageConversionException;

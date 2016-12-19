@@ -1,4 +1,4 @@
-package de.dfki.nlp.rest.exceptions;
+package de.dfki.nlp.domain.exceptions;
 
 import lombok.Data;
 

@@ -32,14 +32,13 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-public class DocumentLoader {
+public class DocumentFetcher {
 
     private final RestTemplate restTemplate;
 
 
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-
 
     @Value("${server.pubmed.url}")
     String pubmedUrl;
@@ -51,12 +50,13 @@ public class DocumentLoader {
     String patentUrl;
 
 
-    public DocumentLoader(RestTemplate restTemplate) {
+    public DocumentFetcher(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public ParsedInputText load(ServerRequest.Document document) {
 
+        // default, when there is an error retrieving the document
         ParsedInputText parsedInputText = new ParsedInputText(null, null, null);
 
         switch (document.getSource().toLowerCase(Locale.ENGLISH)) {

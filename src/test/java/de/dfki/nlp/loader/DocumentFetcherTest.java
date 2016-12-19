@@ -16,16 +16,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@ContextConfiguration(classes = {GeneralConfig.class, DocumentLoader.class, ObjectMapper.class} )
-public class DocumentLoaderTest {
+@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class} )
+public class DocumentFetcherTest {
 
     @Autowired
-    DocumentLoader documentLoader;
+    DocumentFetcher documentFetcher;
 
     @Test
     public void testNotImplementedLoader() throws Exception {
 
-        ParsedInputText load = documentLoader.load(new ServerRequest.Document("BC1403855C", "Patent Server"));
+        ParsedInputText load = documentFetcher.load(new ServerRequest.Document("BC1403855C", "Patent Server"));
 
         assertThat(load.getExternalId()).isNull();
         assertThat(load.getTitle()).isNull();
@@ -36,7 +36,7 @@ public class DocumentLoaderTest {
     @Test
     public void testPatent() throws Exception {
 
-        ParsedInputText load = documentLoader.load(new ServerRequest.Document("CA2073855C", "Patent Server"));
+        ParsedInputText load = documentFetcher.load(new ServerRequest.Document("CA2073855C", "Patent Server"));
 
         assertThat(load.getExternalId()).isEqualTo("CA2073855C");
         assertThat(load.getTitle()).isEqualTo("Glycoalkaloids for controlling cellular autophagy");
@@ -48,7 +48,7 @@ public class DocumentLoaderTest {
     public void testPubMed() throws Exception {
         // now test pubmed
 
-        ParsedInputText load = documentLoader.load(new ServerRequest.Document("BC1403854C", "pubmed"));
+        ParsedInputText load = documentFetcher.load(new ServerRequest.Document("BC1403854C", "pubmed"));
 
         assertThat(load.getExternalId()).isEqualTo("BC1403854C");
         assertThat(load.getTitle()).isEqualTo("Twelve-year clinical report on multiple endodontic implant stabilizers.");
@@ -60,19 +60,19 @@ public class DocumentLoaderTest {
     public void testPMC() throws Exception {
         // now test pmc
 
-        ParsedInputText pmc = documentLoader.load(new ServerRequest.Document("20255", "PMC"));
+        ParsedInputText pmc = documentFetcher.load(new ServerRequest.Document("20255", "PMC"));
 
         assertThat(pmc.getExternalId()).isEqualTo("20255");
         assertThat(pmc.getTitle()).isEqualTo("Mycobacterium bovis bacille Calmette–Guérin strains secreting listeriolysin of Listeria monocytogenes");
         assertThat(pmc.getAbstractText()).startsWith("Recombinant (r) Mycobacterium bovis strains were constructed that secrete biologically active listeriolysin (Hly) fusion protein of Listeria monocytogenes");
 
-        ParsedInputText noAbstract = documentLoader.load(new ServerRequest.Document("BC1403855C", "PMC"));
+        ParsedInputText noAbstract = documentFetcher.load(new ServerRequest.Document("BC1403855C", "PMC"));
 
         assertThat(noAbstract.getExternalId()).isEqualTo("BC1403855C");
         assertThat(noAbstract.getTitle()).isEqualTo("A complex concurrent schedule of reinforcement1");
         assertThat(noAbstract.getAbstractText()).isNull();
 
-        ParsedInputText noDocument = documentLoader.load(new ServerRequest.Document("12211244", "PMC"));
+        ParsedInputText noDocument = documentFetcher.load(new ServerRequest.Document("12211244", "PMC"));
 
         assertThat(noDocument.getExternalId()).isEqualTo("12211244");
         assertThat(noDocument.getTitle()).isNull();
