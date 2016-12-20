@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.integration.config.EnableIntegration;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
 @SpringBootApplication
 @Slf4j
 @EnableIntegration
@@ -38,6 +42,7 @@ public class SethTipsApplication {
             );
 
             parameters.setCommunication_id(-1);
+            parameters.setExpired(Date.from(ZonedDateTime.now(ZoneId.of("Europe/Berlin")).plusMinutes(30).toInstant()));
             message.setParameters(parameters);
 
             // send one test message

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotEmpty;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -29,7 +30,7 @@ public class ServerRequest {
     public static class Documents {
         List<Document> documents;
         List<String> types;
-        String expired;
+        Date expired;
         int communication_id;
     }
 
