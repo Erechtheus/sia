@@ -20,7 +20,6 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.transformer.GenericTransformer;
-import org.springframework.integration.util.CallerBlocksPolicy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import seth.SETH;
@@ -28,6 +27,7 @@ import seth.SETH;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -145,7 +145,7 @@ public class FlowHandler {
         threadPoolTaskExecutor.setMaxPoolSize(concurrentConsumer);
         threadPoolTaskExecutor.setCorePoolSize(concurrentConsumer);
         threadPoolTaskExecutor.setQueueCapacity(concurrentConsumer * 40);
-        threadPoolTaskExecutor.setRejectedExecutionHandler(new CallerBlocksPolicy(Integer.MAX_VALUE));
+        threadPoolTaskExecutor.setKeepAliveSeconds(Math.toIntExact(TimeUnit.SECONDS.convert(1, TimeUnit.HOURS)));
         threadPoolTaskExecutor.initialize();
         return threadPoolTaskExecutor;
     }
