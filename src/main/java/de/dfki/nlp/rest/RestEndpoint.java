@@ -27,7 +27,7 @@ public class RestEndpoint {
     @Value("${server.changes}")
     String changes;
 
-    @Value("${server.max:500}")
+    @Value("${server.max:10000}")
     String max;
 
     @Autowired
