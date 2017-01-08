@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import java.util.Date;
 import java.util.List;
 
 @Data
@@ -30,7 +29,8 @@ public class ServerRequest {
     public static class Documents {
         List<Document> documents;
         List<String> types;
-        Date expired;
+        // TODO Date format not correct yet - server sends 2017-02-07 22:33:53Z
+        String expired;
         int communication_id;
     }
 
