@@ -62,7 +62,7 @@ public class DocumentFetcher {
         switch (document.getSource().toLowerCase(Locale.ENGLISH)) {
             case "pubmed":
 
-                log.info("Downloading pubmed {}", document.getDocument_id());
+                log.debug("Downloading pubmed {}", document.getDocument_id());
 
                 try {
                     PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
@@ -141,7 +141,7 @@ public class DocumentFetcher {
         }
 
 
-        log.info("extracted {}", parsedInputText.toString());
+        log.debug("extracted {}", parsedInputText.toString());
         return parsedInputText;
 
 

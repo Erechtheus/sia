@@ -81,8 +81,8 @@ public class FlowHandler {
 
                             @Override
                             public void handleError(ClientHttpResponse response) throws IOException {
-                                log.info(response.getStatusText());
-                                log.info(IOUtils.toString(response.getBody()));
+                                log.debug(response.getStatusText());
+                                log.debug(IOUtils.toString(response.getBody()));
                             }
                         })*/
                         .uriVariable("apikey", "'" + apiKey + "'")
@@ -98,14 +98,14 @@ public class FlowHandler {
             List<MutationMention> mutationsTitle = Collections.emptyList();
             List<MutationMention> mutationsAbstract = Collections.emptyList();
 
-            log.info("Parsing");
+            log.trace("Parsing");
             if (payload.getTitle() != null) {
                 mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle());
             }
             if (payload.getAbstractText() != null) {
                 mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
             }
-            log.info("Done parsing");
+            log.trace("Done parsing");
 
             // transform
 
