@@ -20,11 +20,14 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.transformer.GenericTransformer;
+import org.springframework.integration.util.CallerBlocksPolicy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import seth.SETH;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,13 +66,16 @@ public class FlowHandler {
                         // split documents
                         serverRequest.getParameters().getDocuments()
                 )
+                // handle in parallel using an executor on a different channel
+                .channel(c -> c.executor(executor()))
                 .transform(ServerRequest.Document.class, documentFetcher::load)
                 .transform(ParsedInputText.class, this::performAnnotation)
                 .aggregate()
                 // now merge the results by flattening
                 .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
-                .handleWithAdapter(adapters -> adapters
+                //.handle(m -> log.info(m.toString()))
+               .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
 /*                        .errorHandler(new ResponseErrorHandler() {
@@ -131,6 +137,17 @@ public class FlowHandler {
                 return predictionResult;
             }).collect(Collectors.toList());
 
+    }
+
+    @Bean
+    public Executor executor() {
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        threadPoolTaskExecutor.setMaxPoolSize(concurrentConsumer);
+        threadPoolTaskExecutor.setCorePoolSize(concurrentConsumer);
+        threadPoolTaskExecutor.setQueueCapacity(concurrentConsumer * 40);
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new CallerBlocksPolicy(Integer.MAX_VALUE));
+        threadPoolTaskExecutor.initialize();
+        return threadPoolTaskExecutor;
     }
 
 }
