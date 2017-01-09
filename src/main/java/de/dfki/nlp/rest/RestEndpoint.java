@@ -7,6 +7,7 @@ import de.dfki.nlp.domain.exceptions.UnsupportedMethodException;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerState;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
+@Slf4j
 public class RestEndpoint {
 
     @Value("${apiKey}")
@@ -42,6 +44,8 @@ public class RestEndpoint {
                 if (serverRequest.getParameters() == null) {
                     throw new PayloadException("Request Parameter not set");
                 }
+
+                log.info("Request to analyze types : {}", serverRequest.getParameters().getTypes());
 
                 // send
                 processGateway.sendForProcessing(serverRequest);
