@@ -2,6 +2,7 @@ package de.dfki.nlp.flow;
 
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.PredictionTypes;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentFetcher;
 import de.hu.berlin.wbi.objects.MutationMention;
@@ -130,7 +131,10 @@ public class FlowHandler {
             predictionResult.setEnd(mutationMentions.getEnd());
             predictionResult.setAnnotatedText(mutationMentions.getText());
             predictionResult.setSection(pair.getValue());
-            predictionResult.setType(mutationMentions.getType().name());
+
+            // TODO check types
+            // predictionResult.setType(mutationMentions.getType().name());
+            predictionResult.setType(PredictionTypes.MUTATION);
             predictionResult.setDocumentId(payload.getExternalId());
 
             predictionResult.setScore(1d);

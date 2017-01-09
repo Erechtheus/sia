@@ -71,7 +71,7 @@ public class PredictionResult {
      */
     @JsonProperty("type")
     @JsonPropertyDescription("")
-    private String type;
+    private PredictionTypes type;
     /**
      * Database ID of the prediction
      */
@@ -217,7 +217,7 @@ public class PredictionResult {
      * @return The type
      */
     @JsonProperty("type")
-    public String getType() {
+    public PredictionTypes getType() {
         return type;
     }
 
@@ -227,7 +227,7 @@ public class PredictionResult {
      * @param type The type
      */
     @JsonProperty("type")
-    public void setType(String type) {
+    public void setType(PredictionTypes type) {
         this.type = type;
     }
 
