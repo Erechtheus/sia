@@ -75,7 +75,7 @@ public class FlowHandler {
                 // now merge the results by flattening
                 .transform((GenericTransformer<List<List<PredictionResult>>, List<PredictionResult>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
-                .handle(m -> log.info(m.toString()))
+                //.handle(m -> log.info(m.toString()))
                 .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
