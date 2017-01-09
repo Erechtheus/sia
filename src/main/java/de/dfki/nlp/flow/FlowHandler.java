@@ -20,14 +20,12 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.transformer.GenericTransformer;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import seth.SETH;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,6 +43,9 @@ public class FlowHandler {
 
     @Value("${server.concurrentConsumer}")
     int concurrentConsumer;
+
+    @Value("${server.concurrentHandler}")
+    int concurrentHandler;
 
     @Autowired
     public FlowHandler(DocumentFetcher documentFetcher) {
@@ -67,15 +68,15 @@ public class FlowHandler {
                         serverRequest.getParameters().getDocuments()
                 )
                 // handle in parallel using an executor on a different channel
-                .channel(c -> c.executor(executor()))
+                .channel(c -> c.executor(Executors.newFixedThreadPool(concurrentHandler)))
                 .transform(ServerRequest.Document.class, documentFetcher::load)
                 .transform(ParsedInputText.class, this::performAnnotation)
                 .aggregate()
                 // now merge the results by flattening
-                .transform((GenericTransformer<List<List<Object>>, List<Object>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
+                .transform((GenericTransformer<List<List<PredictionResult>>, List<PredictionResult>>) source -> source.stream().flatMap(List::stream).collect(Collectors.toList()))
                 .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
-                //.handle(m -> log.info(m.toString()))
-               .handleWithAdapter(adapters -> adapters
+                .handle(m -> log.info(m.toString()))
+                .handleWithAdapter(adapters -> adapters
                         .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
                         .httpMethod(HttpMethod.POST)
 /*                        .errorHandler(new ResponseErrorHandler() {
@@ -99,55 +100,45 @@ public class FlowHandler {
 
     private List<PredictionResult> performAnnotation(ParsedInputText payload) {
 
-            if (payload.getExternalId() == null) return Collections.emptyList();
+        if (payload.getExternalId() == null) return Collections.emptyList();
 
-            List<MutationMention> mutationsTitle = Collections.emptyList();
-            List<MutationMention> mutationsAbstract = Collections.emptyList();
+        List<MutationMention> mutationsTitle = Collections.emptyList();
+        List<MutationMention> mutationsAbstract = Collections.emptyList();
 
-            log.trace("Parsing");
-            if (payload.getTitle() != null) {
-                mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle());
-            }
-            if (payload.getAbstractText() != null) {
-                mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
-            }
-            log.trace("Done parsing");
+        log.trace("Parsing");
+        if (payload.getTitle() != null) {
+            mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle());
+        }
+        if (payload.getAbstractText() != null) {
+            mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
+        }
+        log.trace("Done parsing");
 
-            // transform
+        // transform
 
-            Stream<Pair<MutationMention, PredictionResult.Section>> title = mutationsTitle.stream().map(m -> Pair.of(m, PredictionResult.Section.T));
-            Stream<Pair<MutationMention, PredictionResult.Section>> abstractT = mutationsAbstract.stream().map(m -> Pair.of(m, PredictionResult.Section.A));
+        Stream<Pair<MutationMention, PredictionResult.Section>> title = mutationsTitle.stream().map(m -> Pair.of(m, PredictionResult.Section.T));
+        Stream<Pair<MutationMention, PredictionResult.Section>> abstractT = mutationsAbstract.stream().map(m -> Pair.of(m, PredictionResult.Section.A));
 
 
-            return Stream.concat(title, abstractT).map(pair -> {
-                PredictionResult predictionResult = new PredictionResult();
-                predictionResult.setDocumentId(payload.getExternalId());
+        return Stream.concat(title, abstractT).map(pair -> {
+            PredictionResult predictionResult = new PredictionResult();
+            predictionResult.setDocumentId(payload.getExternalId());
 
-                MutationMention mutationMentions = pair.getKey();
+            MutationMention mutationMentions = pair.getKey();
 
-                predictionResult.setInit(mutationMentions.getStart());
-                predictionResult.setEnd(mutationMentions.getEnd());
-                predictionResult.setAnnotatedText(mutationMentions.getText());
-                predictionResult.setSection(pair.getValue());
-                predictionResult.setType(mutationMentions.getType().name());
-                predictionResult.setDocumentId(payload.getExternalId());
+            predictionResult.setInit(mutationMentions.getStart());
+            predictionResult.setEnd(mutationMentions.getEnd());
+            predictionResult.setAnnotatedText(mutationMentions.getText());
+            predictionResult.setSection(pair.getValue());
+            predictionResult.setType(mutationMentions.getType().name());
+            predictionResult.setDocumentId(payload.getExternalId());
 
-                predictionResult.setScore(1d);
+            predictionResult.setScore(1d);
 
-                return predictionResult;
-            }).collect(Collectors.toList());
+            return predictionResult;
+        }).collect(Collectors.toList());
 
     }
 
-    @Bean
-    public Executor executor() {
-        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setMaxPoolSize(concurrentConsumer);
-        threadPoolTaskExecutor.setCorePoolSize(concurrentConsumer);
-        threadPoolTaskExecutor.setQueueCapacity(concurrentConsumer * 40);
-        threadPoolTaskExecutor.setKeepAliveSeconds(Math.toIntExact(TimeUnit.SECONDS.convert(1, TimeUnit.HOURS)));
-        threadPoolTaskExecutor.initialize();
-        return threadPoolTaskExecutor;
-    }
 
 }
