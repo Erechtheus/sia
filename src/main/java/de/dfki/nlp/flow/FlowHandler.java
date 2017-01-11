@@ -1,13 +1,12 @@
 package de.dfki.nlp.flow;
 
+import de.dfki.nlp.MirNer;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionTypes;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentFetcher;
-import de.hu.berlin.wbi.objects.MutationMention;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -24,6 +23,7 @@ import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.stereotype.Component;
 import seth.SETH;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -41,7 +41,7 @@ public class FlowHandler {
 
     // give each thread a new instance
     private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SETH("resources/mutations.txt", true, true, false));
-
+    private static final MirNer mirNer  = new MirNer();
     @Value("${server.concurrentConsumer}")
     int concurrentConsumer;
 
@@ -103,44 +103,24 @@ public class FlowHandler {
 
         if (payload.getExternalId() == null) return Collections.emptyList();
 
-        List<MutationMention> mutationsTitle = Collections.emptyList();
-        List<MutationMention> mutationsAbstract = Collections.emptyList();
+        List<PredictionResult> results = new ArrayList<>();
+
 
         log.trace("Parsing");
         if (payload.getTitle() != null) {
-            mutationsTitle = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle());
+            Stream<PredictionResult> mutations = SETH_THREAD_LOCAL.get().findMutations(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
+            Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
+            results.addAll(Stream.concat(mutations, mirnas).collect(Collectors.toList()));
         }
         if (payload.getAbstractText() != null) {
-            mutationsAbstract = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText());
+            Stream<PredictionResult> mutations = SETH_THREAD_LOCAL.get().findMutations(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
+            Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
+            results.addAll(Stream.concat(mutations, mirnas).collect(Collectors.toList()));
         }
         log.trace("Done parsing");
 
         // transform
-
-        Stream<Pair<MutationMention, PredictionResult.Section>> title = mutationsTitle.stream().map(m -> Pair.of(m, PredictionResult.Section.T));
-        Stream<Pair<MutationMention, PredictionResult.Section>> abstractT = mutationsAbstract.stream().map(m -> Pair.of(m, PredictionResult.Section.A));
-
-
-        return Stream.concat(title, abstractT).map(pair -> {
-            PredictionResult predictionResult = new PredictionResult();
-            predictionResult.setDocumentId(payload.getExternalId());
-
-            MutationMention mutationMentions = pair.getKey();
-
-            predictionResult.setInit(mutationMentions.getStart());
-            predictionResult.setEnd(mutationMentions.getEnd());
-            predictionResult.setAnnotatedText(mutationMentions.getText());
-            predictionResult.setSection(pair.getValue());
-
-            // TODO check types
-            // predictionResult.setType(mutationMentions.getType().name());
-            predictionResult.setType(PredictionTypes.MUTATION);
-            predictionResult.setDocumentId(payload.getExternalId());
-
-            predictionResult.setScore(1d);
-
-            return predictionResult;
-        }).collect(Collectors.toList());
+        return results;
 
     }
 

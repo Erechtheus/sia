@@ -1,6 +1,7 @@
 package de.dfki.nlp.domain;
 
 import com.fasterxml.jackson.annotation.*;
+import lombok.AllArgsConstructor;
 import lombok.ToString;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.Map;
         "database_id"
 })
 @ToString
+@AllArgsConstructor
 public class PredictionResult {
 
     /**
