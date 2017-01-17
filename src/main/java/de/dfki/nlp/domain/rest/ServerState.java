@@ -13,7 +13,7 @@ public class ServerState {
     State state;
     String version;
     String version_changes;
-    String max_analizable_documents;
+    String max_analyzable_documents;
 
     public enum State {
         Running("The server is enabled and working properly. This is the normal state. This state includes conditions when the database server is available and waiting for jobs."),
