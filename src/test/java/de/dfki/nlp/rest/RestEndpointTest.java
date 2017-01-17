@@ -92,7 +92,7 @@ public class RestEndpointTest {
         assertThat(response.getBody().getData()).isInstanceOf(Map.class);
         assertThat((Map<String,?>) response.getBody().getData())
                 .hasSize(4)
-                .containsKey("max_analizable_documents")
+                .containsKey("max_analyzable_documents")
                 .containsKey("state")
                 .containsKey("version")
                 .containsKey("version_changes");
