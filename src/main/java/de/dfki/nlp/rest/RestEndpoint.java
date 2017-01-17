@@ -45,7 +45,7 @@ public class RestEndpoint {
                     throw new PayloadException("Request Parameter not set");
                 }
 
-                log.info("Request to analyze types : {}", serverRequest.getParameters().getTypes());
+                log.info("Request to analyze {} documents with types : {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes());
 
                 // send
                 processGateway.sendForProcessing(serverRequest);
