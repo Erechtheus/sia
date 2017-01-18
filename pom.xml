@@ -9,7 +9,7 @@
 	<packaging>jar</packaging>
 
 	<name>seth-tips</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -22,7 +22,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<spring.cloud.version>Camden.SR3</spring.cloud.version>
+		<spring.cloud.version>Camden.SR4</spring.cloud.version>
 	</properties>
 
 	<dependencies>
@@ -135,19 +135,6 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
-			<plugin>
-				<groupId>org.projectlombok</groupId>
-				<artifactId>lombok-maven-plugin</artifactId>
-				<version>1.16.12.0</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>delombok</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 
