@@ -126,6 +126,13 @@
 			<artifactId>spring-cloud-cloudfoundry-connector</artifactId>
 		</dependency>
 
+		<!-- See http://docs.spring.io/spring-boot/docs/1.4.3.RELEASE/reference/html/configuration-metadata.html#configuration-metadata-annotation-processor -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 	</dependencies>
 
 	<build>

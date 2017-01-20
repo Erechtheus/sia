@@ -1,7 +1,9 @@
 package de.dfki.nlp.domain.exceptions;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class BaseException extends Exception {
 

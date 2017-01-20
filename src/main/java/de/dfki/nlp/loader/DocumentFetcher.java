@@ -1,6 +1,7 @@
 package de.dfki.nlp.loader;
 
 import com.google.common.collect.Iterables;
+import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.pubmed.Abstract;
 import de.dfki.nlp.domain.pubmed.AbstractText;
@@ -9,7 +10,6 @@ import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -35,23 +35,15 @@ import java.util.stream.Collectors;
 public class DocumentFetcher {
 
     private final RestTemplate restTemplate;
+    private final AnnotatorConfig annotatorConfig;
 
 
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-    @Value("${server.pubmed.url}")
-    String pubmedUrl;
-
-    @Value("${server.pmc.url}")
-    String pmcUrl;
-
-    @Value("${server.patent.url}")
-    String patentUrl;
-
-
-    public DocumentFetcher(RestTemplate restTemplate) {
+    public DocumentFetcher(RestTemplate restTemplate, AnnotatorConfig annotatorConfig) {
         this.restTemplate = restTemplate;
+        this.annotatorConfig = annotatorConfig;
     }
 
     public ParsedInputText load(ServerRequest.Document document) {
@@ -66,7 +58,7 @@ public class DocumentFetcher {
 
                 try {
                     PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
-                            pubmedUrl,
+                            annotatorConfig.pubmed.url,
                             PubmedArticleSet.class, document.getDocument_id());
 
                     // now we get the article
@@ -99,7 +91,7 @@ public class DocumentFetcher {
                 try {
 
                     String pmc = restTemplate.getForObject(
-                            pmcUrl,
+                            annotatorConfig.pmc.url,
                             String.class, document.getDocument_id());
 
 
@@ -127,7 +119,7 @@ public class DocumentFetcher {
             case "patent server":
 
                 try {
-                    parsedInputText = restTemplate.getForObject(patentUrl, ParsedInputText.class, document.getDocument_id());
+                    parsedInputText = restTemplate.getForObject(annotatorConfig.patent.url, ParsedInputText.class, document.getDocument_id());
                 } catch (RestClientException e) {
                     log.error("Error retrieving patent {}", document.getDocument_id(), e);
                 }
