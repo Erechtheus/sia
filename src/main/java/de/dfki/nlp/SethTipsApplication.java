@@ -33,7 +33,11 @@ public class SethTipsApplication {
             parameters.setDocuments(Lists.newArrayList(
                     new ServerRequest.Document("CA2073855C", "Patent Server"),
                     new ServerRequest.Document("24218123", "PUBMED"),
-                    new ServerRequest.Document("BC1403855C", "PMC")
+                    new ServerRequest.Document("BC1403855C", "PMC"),
+                    new ServerRequest.Document("US20080038365", "Patent Server"),
+                    new ServerRequest.Document("WO2010032704A1", "Patent Server"),
+                    new ServerRequest.Document("WO2012005339A1", "Patent Server"),
+                    new ServerRequest.Document("US20110195924", "Patent Server")
                     )
             );
 

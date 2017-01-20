@@ -1,12 +1,14 @@
 package de.dfki.nlp.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.config.GeneralConfig;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -15,12 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
-@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class} )
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class})
+@EnableConfigurationProperties(AnnotatorConfig.class)
 public class DocumentFetcherTest {
 
     @Autowired
-    DocumentFetcher documentFetcher;
+    private DocumentFetcher documentFetcher;
 
     @Test
     public void testNotImplementedLoader() throws Exception {
