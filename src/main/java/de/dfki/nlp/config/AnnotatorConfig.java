@@ -37,6 +37,12 @@ public class AnnotatorConfig {
     public int concurrentHandler;
 
     /**
+     * Maximum number of accepted documents per day.
+     */
+    @NotEmpty
+    public String maxDaily;
+
+    /**
      * Version of the current service, e.g. 1.0.
      */
     @NotEmpty
@@ -62,6 +68,17 @@ public class AnnotatorConfig {
     @Valid
     @NotNull
     public Def patent;
+
+    @Valid
+    @NotNull
+    public Def abstractserver;
+
+
+    @NotEmpty
+    public String apiKey;
+
+    @NotEmpty
+    public String serverKey;
 
     @Data
     public static class Def {

@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
@@ -39,9 +38,6 @@ import java.util.stream.Stream;
 public class FlowHandler {
 
     final DocumentFetcher documentFetcher;
-
-    @Value("${apiKey}")
-    String apiKey;
 
     // give each thread a new instance - this might not be needed
     //private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SETH("resources/mutations.txt", true, true, false));
@@ -125,7 +121,7 @@ public class FlowHandler {
                         log.debug(IOUtils.toString(response.getBody()));
                     }
                 })*/
-                .uriVariable("apikey", "'" + apiKey + "'")
+                .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
                 .uriVariable("communicationId", "headers['communication_id']");
     }
 

@@ -13,4 +13,6 @@ public class ParsedInputText {
     String title;
     String abstractText;
 
+    String text;
+
 }

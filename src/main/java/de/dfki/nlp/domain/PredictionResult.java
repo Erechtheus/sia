@@ -81,7 +81,7 @@ public class PredictionResult {
     @JsonPropertyDescription("")
     private String databaseId;
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+    private Map<String, Object> additionalProperties = new HashMap<>();
 
     /**
      * Document external ID
@@ -268,7 +268,7 @@ public class PredictionResult {
         T("T"),
         A("A");
         private final String value;
-        private final static Map<String, PredictionResult.Section> CONSTANTS = new HashMap<String, PredictionResult.Section>();
+        private final static Map<String, PredictionResult.Section> CONSTANTS = new HashMap<>();
 
         static {
             for (PredictionResult.Section c : values()) {
@@ -276,7 +276,7 @@ public class PredictionResult {
             }
         }
 
-        private Section(String value) {
+        Section(String value) {
             this.value = value;
         }
 

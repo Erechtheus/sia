@@ -24,7 +24,7 @@ public class ServerState {
         Working("The server is already working in one project and can not be used at the moment."),
         Pending("There is no response from the server yet.");
 
-        private String description;
+        private final String description;
 
         State(String description) {
             this.description = description;

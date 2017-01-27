@@ -1,4 +1,4 @@
-# Sudo required for rabbitmq service
+# sudo required for rabbitmq service
 sudo: required
 
 language: java

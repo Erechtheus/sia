@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServerRequestJSONTest {
 
-    private CustomObjectMapper customObjectMapper = new CustomObjectMapper();
+    private final CustomObjectMapper customObjectMapper = new CustomObjectMapper();
 
     @Test
     public void testDeserializeBrokenRequest() throws Exception {

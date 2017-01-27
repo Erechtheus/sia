@@ -1,10 +1,10 @@
 package de.dfki.nlp.rest;
 
 import com.google.common.base.Joiner;
+import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.exceptions.BaseException;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -20,8 +20,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @Value("${apiKey}")
-    String apiKey;
+
+    private final AnnotatorConfig annotatorConfig;
+
+    public GlobalExceptionHandler(AnnotatorConfig annotatorConfig) {
+        this.annotatorConfig = annotatorConfig;
+    }
 
     @ExceptionHandler(value = Exception.class)
     public ErrorResponse handleException(Exception e) {
@@ -32,19 +36,19 @@ public class GlobalExceptionHandler {
             errorCode = "2";
         }
 
-        return new ErrorResponse(400, false, apiKey, e.getMessage(), errorCode);
+        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), errorCode);
     }
 
     @ExceptionHandler(value = BaseException.class)
     public ErrorResponse handleCustom(BaseException e) {
         log.error("Error", e);
-        return new ErrorResponse(400, false, apiKey, e.getMessage(), e.getErrorCode());
+        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), e.getErrorCode());
     }
 
     @ExceptionHandler(value = HttpMessageConversionException.class)
     public ErrorResponse handleHTTPError(HttpMessageConversionException e) {
         log.error("Error", e);
-        return new ErrorResponse(400, false, apiKey, e.getMessage(), "1");
+        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), "1");
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
@@ -59,7 +63,7 @@ public class GlobalExceptionHandler {
                     }
                     return "Error for " + validationError.getObjectName();
                 }).collect(Collectors.joining(". "));
-        return new ErrorResponse(400, false, apiKey, message, "1");
+        return new ErrorResponse(400, false, annotatorConfig.apiKey, message, "1");
     }
 
 }  

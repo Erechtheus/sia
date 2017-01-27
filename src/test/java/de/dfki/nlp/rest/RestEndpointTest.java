@@ -90,6 +90,7 @@ public class RestEndpointTest {
         assertThat(response.getBody().getStatus()).isEqualTo(200);
 
         assertThat(response.getBody().getData()).isInstanceOf(Map.class);
+        //noinspection unchecked
         assertThat((Map<String,?>) response.getBody().getData())
                 .hasSize(4)
                 .containsKey("max_analyzable_documents")

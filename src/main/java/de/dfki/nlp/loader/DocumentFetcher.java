@@ -38,8 +38,8 @@ public class DocumentFetcher {
     private final AnnotatorConfig annotatorConfig;
 
 
-    private XPathFactory xpathFactory = XPathFactory.newInstance();
-    private DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    private final XPathFactory xpathFactory = XPathFactory.newInstance();
+    private final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
     public DocumentFetcher(RestTemplate restTemplate, AnnotatorConfig annotatorConfig) {
         this.restTemplate = restTemplate;
@@ -49,7 +49,7 @@ public class DocumentFetcher {
     public ParsedInputText load(ServerRequest.Document document) {
 
         // default, when there is an error retrieving the document
-        ParsedInputText parsedInputText = new ParsedInputText(null, null, null);
+        ParsedInputText parsedInputText = new ParsedInputText(null, null, null, null);
 
         switch (document.getSource().toLowerCase(Locale.ENGLISH)) {
             case "pubmed":
@@ -78,7 +78,7 @@ public class DocumentFetcher {
                         titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
                     }
 
-                    parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText);
+                    parsedInputText = new ParsedInputText(document.getDocument_id(), titleText, abstractText, null);
                 } catch (RestClientException | NoSuchElementException | IllegalArgumentException | NullPointerException e) {
                     log.error("Error retrieving pubmed document from server", e);
                 }
@@ -108,11 +108,27 @@ public class DocumentFetcher {
                     title = StringUtils.defaultIfEmpty(StringUtils.trim(title), null);
                     abstractT = StringUtils.defaultIfEmpty(StringUtils.trim(abstractT), null);
 
-                    parsedInputText = new ParsedInputText(document.getDocument_id(), title, abstractT);
+                    parsedInputText = new ParsedInputText(document.getDocument_id(), title, abstractT, null);
 
                 } catch (RestClientException | ParserConfigurationException | SAXException | IOException | XPathExpressionException | NullPointerException e) {
                     log.error("Error retrieving pmc document", e);
                 }
+
+                break;
+
+            case "abstract server":
+
+                try {
+                    parsedInputText = restTemplate.getForObject(annotatorConfig.abstractserver.url, ParsedInputText.class, document.getDocument_id());
+
+                    // move text to abstract text
+                    parsedInputText.setAbstractText(parsedInputText.getText());
+                    parsedInputText.setText(null);
+
+                } catch (RestClientException e) {
+                    log.error("Error retrieving abstract {}", document.getDocument_id(), e);
+                }
+
 
                 break;
 
