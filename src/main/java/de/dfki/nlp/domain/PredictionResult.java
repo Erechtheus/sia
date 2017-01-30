@@ -32,54 +32,47 @@ public class PredictionResult {
      * (Required)
      */
     @JsonProperty("document_id")
-    @JsonPropertyDescription("")
     private String documentId;
     /**
      * Section of the prediction (T or A)
      * (Required)
      */
     @JsonProperty("section")
-    @JsonPropertyDescription("")
     private PredictionResult.Section section;
     /**
      * Init of the prediction
      * (Required)
      */
     @JsonProperty("init")
-    @JsonPropertyDescription("")
     private Integer init;
     /**
      * End of the prediction
      * (Required)
      */
     @JsonProperty("end")
-    @JsonPropertyDescription("")
     private Integer end;
     /**
      * Score of the prediction
      */
     @JsonProperty("score")
-    @JsonPropertyDescription("")
     private Double score;
     /**
      * Annotated text of the prediction
      * (Required)
      */
     @JsonProperty("annotated_text")
-    @JsonPropertyDescription("")
     private String annotatedText;
     /**
      * Type of the prediction
      */
     @JsonProperty("type")
-    @JsonPropertyDescription("")
     private PredictionTypes type;
     /**
      * Database ID of the prediction
      */
     @JsonProperty("database_id")
-    @JsonPropertyDescription("")
     private String databaseId;
+
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
 

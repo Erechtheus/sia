@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 @Component
 public class FlowHandler {
 
-    final DocumentFetcher documentFetcher;
+    private final DocumentFetcher documentFetcher;
 
     // give each thread a new instance - this might not be needed
     //private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SETH("resources/mutations.txt", true, true, false));
@@ -78,7 +78,7 @@ public class FlowHandler {
 
 
         if (environment.acceptsProfiles("cloud")) {
-            // when cloud profile is active, send results http
+            // when cloud profile is active, send results via http
             flow
                     .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
                     .handleWithAdapter(httpHandler());
