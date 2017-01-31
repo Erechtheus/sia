@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class})
+@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class, RetryHandler.class})
 @EnableConfigurationProperties(AnnotatorConfig.class)
 public class DocumentFetcherTest {
 
