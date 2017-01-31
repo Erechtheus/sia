@@ -43,7 +43,7 @@ public class DiseasesNer {
                         allNames.add(line.toLowerCase());
                     }
 
-                    return false;
+                    return true;
                 }
 
                 @Override
