@@ -7,7 +7,10 @@
     "documents":[
       {"document_id":"CA2073855C","source":"Patent server"},
       {"document_id":"BC1403855C","source":"PMC"},
-      {"document_id":"BC1403854C","source":"PUBMED"}
+      {"document_id":"BC1403854C","source":"PUBMED"},
+      {"document_id":"CA2073855C","source":"PATENT SERVER"},
+      {"document_id":"PMC1234567","source":"PMC"},
+      {"document_id":"10323730","source":"Abstract Server"}
     ],
     "types" : ["Identifier","Family"],
     "expired": "2016-12-19T19:13:28+00:00",

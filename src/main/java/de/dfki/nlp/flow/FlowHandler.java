@@ -2,6 +2,7 @@ package de.dfki.nlp.flow;
 
 import de.dfki.nlp.MirNer;
 import de.dfki.nlp.config.AnnotatorConfig;
+import de.dfki.nlp.diseaseNer.DiseasesNer;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionTypes;
@@ -26,13 +27,10 @@ import org.springframework.integration.http.outbound.HttpRequestExecutingMessage
 import org.springframework.stereotype.Component;
 import seth.SETH;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import de.dfki.nlp.diseaseNer.DiseasesNer;
 @Slf4j
 @Component
 public class FlowHandler {
@@ -74,8 +72,8 @@ public class FlowHandler {
                         .transform(ParsedInputText.class, this::performAnnotation)
                         .aggregate()
                         // now merge the results by flattening
-                        .<List<List<PredictionResult>>, List<PredictionResult>>transform(source ->
-                                source.stream().flatMap(List::stream).collect(Collectors.toList()));
+                        .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(source ->
+                                source.stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
 
         if (environment.acceptsProfiles("cloud")) {
@@ -86,7 +84,7 @@ public class FlowHandler {
         } else {
             // for local deployment, just log
             flow
-                    .<List<PredictionResult>>handle((parsed, headers) -> {
+                    .<Set<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
                         for (PredictionResult predictionResult : parsed) {
                             log.info(predictionResult.toString());
@@ -127,24 +125,24 @@ public class FlowHandler {
     }
 
 
-    private List<PredictionResult> performAnnotation(ParsedInputText payload) {
+    private Set<PredictionResult> performAnnotation(ParsedInputText payload) {
 
-        if (payload.getExternalId() == null) return Collections.emptyList();
+        if (payload.getExternalId() == null) return Collections.emptySet();
 
-        List<PredictionResult> results = new ArrayList<>();
+        Set<PredictionResult> results = new HashSet<>();
 
         log.trace("Parsing");
         if (payload.getTitle() != null) {
             Stream<PredictionResult> mutations = SETH_DETECTOR.findMutations(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
             Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
-            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
+            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getTitle()).map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
 
             results.addAll(Stream.concat(Stream.concat(mutations, mirnas),diseases).collect(Collectors.toList()));
         }
         if (payload.getAbstractText() != null) {
             Stream<PredictionResult> mutations = SETH_DETECTOR.findMutations(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
             Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
-            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
+            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getAbstractText()).map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
 
             results.addAll(Stream.concat(Stream.concat(mutations, mirnas),diseases).collect(Collectors.toList()));
         }

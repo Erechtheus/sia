@@ -1,7 +1,6 @@
 package de.dfki.nlp;
 
 import com.google.common.collect.Lists;
-import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -17,17 +16,9 @@ import org.springframework.integration.config.EnableIntegration;
 @EnableIntegration
 public class SethTipsApplication {
 
-
     public static void main(String[] args) {
         SpringApplication.run(SethTipsApplication.class, args);
     }
-
-    private final AnnotatorConfig annotatorConfig;
-
-    public SethTipsApplication(AnnotatorConfig annotatorConfig) {
-        this.annotatorConfig = annotatorConfig;
-    }
-
 
     @Bean
     @Profile("!cloud")

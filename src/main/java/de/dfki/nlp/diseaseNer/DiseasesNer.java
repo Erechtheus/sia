@@ -1,14 +1,16 @@
 package de.dfki.nlp.diseaseNer;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.LineProcessor;
+import com.google.common.io.Resources;
 import org.ahocorasick.trie.Emit;
 import org.ahocorasick.trie.Trie;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.zip.GZIPInputStream;
+import java.util.stream.Stream;
 
 /**
  * Created by philippe on 1/31/17.
@@ -17,36 +19,41 @@ public class DiseasesNer {
 
     private final Trie trie;
 
-    public DiseasesNer(){
+    public DiseasesNer() {
         this("drugs.dict");
     }
 
-    public DiseasesNer(String file){
-        super();
+    public DiseasesNer(String file) {
 
-        Set<String> allNames = new TreeSet<>();
-        try{
-            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            InputStream is = classloader.getResourceAsStream(file);
-            //BufferedReader br = new BufferedReader(new FileReader(new File(file)));
-            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        Set<String> allNames;
+        try {
+            allNames = Resources.readLines(Resources.getResource(file), Charsets.UTF_8, new LineProcessor<Set<String>>() {
 
-            while(br.ready()){
-                String line = br.readLine();
+                Set<String> allNames = new TreeSet<>();
 
-                line = line.replaceAll("\"","");
-                line = line.replaceAll("\\(","");
-                line = line.replaceAll("\\)","");
-                line = line.replaceAll("#","");
+                @Override
+                public boolean processLine(String line) throws IOException {
 
-                if(line.length() > 5 && !line.matches("^[A-Z0-9\\s]*$")){
-                    allNames.add(line.toLowerCase());
+                    line = line.replaceAll("\"", "");
+                    line = line.replaceAll("\\(", "");
+                    line = line.replaceAll("\\)", "");
+                    line = line.replaceAll("#", "");
+
+                    if (line.length() > 5 && !line.matches("^[A-Z0-9\\s]*$")) {
+                        allNames.add(line.toLowerCase());
+                    }
+
+                    return false;
                 }
-            }
-            br.close();
 
-        }catch(Exception ex){
-            ex.printStackTrace();
+                @Override
+                public Set<String> getResult() {
+                    return allNames;
+                }
+            });
+
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Can't initialize DiseasesNer", e);
         }
 
         Trie.TrieBuilder builder = Trie.builder()
@@ -54,17 +61,15 @@ public class DiseasesNer {
                 .onlyWholeWords()
                 .removeOverlaps();
 
-        for(String s : allNames){
-            //System.out.println("'" +s +"'");
-            builder.addKeyword(s);
-        }
+        allNames.forEach(builder::addKeyword);
+
         this.trie = builder.build();
 
     }
 
-    public Collection<DiseaseMention> extractFromText(String text){
+    public Stream<DiseaseMention> extractFromText(String text){
 
         Collection<Emit> emits = trie.parseText(text);
-        return emits.stream().map(a -> new DiseaseMention(a.getStart(), a.getEnd(), a.getKeyword())).collect(Collectors.toSet());
+        return emits.stream().map(a -> new DiseaseMention(a.getStart(), a.getEnd(), a.getKeyword()));
     }
 }
