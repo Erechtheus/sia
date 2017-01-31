@@ -1,4 +1,5 @@
 # seth-tips
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8555df90834b44ce8551a756de73e23a)](https://www.codacy.com/app/jkirsch/seth-tips?utm_source=github.com&utm_medium=referral&utm_content=Erechtheus/seth-tips&utm_campaign=badger)
 [![Build Status](https://travis-ci.org/Erechtheus/seth-tips.svg?branch=master)](https://travis-ci.org/Erechtheus/seth-tips)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
