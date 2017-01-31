@@ -68,7 +68,7 @@ public class PredictionResult {
      * Type of the prediction
      */
     @JsonProperty("type")
-    private PredictionTypes type;
+    private PredictionType type;
     /**
      * Database ID of the prediction
      */
@@ -76,7 +76,18 @@ public class PredictionResult {
     private String databaseId;
 
     @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<>();
+    private Map<String, Object> additionalProperties;
+
+
+    public PredictionResult(String documentId, Section section, Integer init, Integer end, Double score, String annotatedText, PredictionType type) {
+        this.documentId = documentId;
+        this.section = section;
+        this.init = init;
+        this.end = end;
+        this.score = score;
+        this.annotatedText = annotatedText;
+        this.type = type;
+    }
 
     /**
      * Document external ID
@@ -214,7 +225,7 @@ public class PredictionResult {
      * @return The type
      */
     @JsonProperty("type")
-    public PredictionTypes getType() {
+    public PredictionType getType() {
         return type;
     }
 
@@ -224,7 +235,7 @@ public class PredictionResult {
      * @param type The type
      */
     @JsonProperty("type")
-    public void setType(PredictionTypes type) {
+    public void setType(PredictionType type) {
         this.type = type;
     }
 

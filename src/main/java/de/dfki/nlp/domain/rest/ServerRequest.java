@@ -1,6 +1,7 @@
 package de.dfki.nlp.domain.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import de.dfki.nlp.domain.PredictionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,7 +29,7 @@ public class ServerRequest {
     @ToString
     public static class Documents {
         List<Document> documents;
-        List<String> types;
+        List<PredictionType> types;
         // TODO Date format not correct yet - server sends 2017-02-07 22:33:53Z
         String expired;
         int communication_id;

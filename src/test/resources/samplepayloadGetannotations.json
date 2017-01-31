@@ -12,7 +12,7 @@
       {"document_id":"10323730","source":"Abstract Server"},
       {"document_id":"10089940","source":"Abstract Server"}
     ],
-    "types" : ["Identifier","Family"],
+    "types" : ["DISEASE", "MUTATION", "MIRNA"],
     "expired": "2016-12-19T19:13:28+00:00",
     "communication_id":1581
   }

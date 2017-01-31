@@ -1,12 +1,8 @@
 package de.dfki.nlp.flow;
 
 import com.google.common.collect.ComparisonChain;
-import de.dfki.nlp.MirNer;
 import de.dfki.nlp.config.AnnotatorConfig;
-import de.dfki.nlp.diseasener.DiseasesNer;
-import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
-import de.dfki.nlp.domain.PredictionTypes;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentFetcher;
 import lombok.extern.slf4j.Slf4j;
@@ -26,23 +22,18 @@ import org.springframework.integration.dsl.core.MessageHandlerSpec;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
 import org.springframework.stereotype.Component;
-import seth.SETH;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 @Slf4j
 @Component
 public class FlowHandler {
 
     private final DocumentFetcher documentFetcher;
-
-    // give each thread a new instance - this might not be needed
-    //private static final ThreadLocal<SETH> SETH_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SETH("resources/mutations.txt", true, true, false));
-    private static final SETH SETH_DETECTOR = new SETH("resources/mutations.txt", true, true, false);
-    private static final MirNer mirNer = new MirNer();
-    private static final DiseasesNer diseaseNer = new DiseasesNer();
 
     private final AnnotatorConfig annotatorConfig;
 
@@ -63,6 +54,7 @@ public class FlowHandler {
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
+                        .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
                         .split(ServerRequest.class, serverRequest ->
                                 // split documents
                                 serverRequest.getParameters().getDocuments()
@@ -70,7 +62,7 @@ public class FlowHandler {
                         // handle in parallel using an executor on a different channel
                         .channel(c -> c.executor(Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
                         .transform(ServerRequest.Document.class, documentFetcher::load)
-                        .transform(ParsedInputText.class, this::performAnnotation)
+                        .transform(new Annotator())
                         .aggregate()
                         // now merge the results by flattening
                         .<List<Set<PredictionResult>>, List<PredictionResult>>transform(source ->
@@ -133,34 +125,6 @@ public class FlowHandler {
                 .uriVariable("communicationId", "headers['communication_id']");
     }
 
-
-    private Set<PredictionResult> performAnnotation(ParsedInputText payload) {
-
-        if (payload.getExternalId() == null) return Collections.emptySet();
-
-        Set<PredictionResult> results = new HashSet<>();
-
-        log.trace("Parsing");
-        if (payload.getTitle() != null) {
-            Stream<PredictionResult> mutations = SETH_DETECTOR.findMutations(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
-            Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getTitle()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
-            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getTitle()).map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.T, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
-
-            results.addAll(Stream.concat(Stream.concat(mutations, mirnas),diseases).collect(Collectors.toList()));
-        }
-        if (payload.getAbstractText() != null) {
-            Stream<PredictionResult> mutations = SETH_DETECTOR.findMutations(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MUTATION, null, null));
-            Stream<PredictionResult> mirnas = mirNer.extractFromText(payload.getAbstractText()).stream().map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.MIRNA, null, null));
-            Stream<PredictionResult> diseases = diseaseNer.extractFromText(payload.getAbstractText()).map(l -> new PredictionResult(payload.getExternalId(), PredictionResult.Section.A, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionTypes.DISEASE, null, null));
-
-            results.addAll(Stream.concat(Stream.concat(mutations, mirnas),diseases).collect(Collectors.toList()));
-        }
-        log.trace("Done parsing");
-
-        // transform
-        return results;
-
-    }
 
 
 }

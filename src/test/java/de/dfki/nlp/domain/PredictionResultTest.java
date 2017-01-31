@@ -11,8 +11,8 @@ public class PredictionResultTest {
     public void testEquals() throws Exception {
 
         // test hashcode and equals
-        PredictionResult predictionResult1 = new PredictionResult("1", PredictionResult.Section.A, 0,1,1.,"", PredictionTypes.MUTATION, null, null);
-        PredictionResult predictionResult2 = new PredictionResult("1", PredictionResult.Section.A, 0,1,1.,"", PredictionTypes.MUTATION, null, null);
+        PredictionResult predictionResult1 = new PredictionResult("1", PredictionResult.Section.A, 0,1,1.,"", PredictionType.MUTATION, null, null);
+        PredictionResult predictionResult2 = new PredictionResult("1", PredictionResult.Section.A, 0,1,1.,"", PredictionType.MUTATION, null, null);
 
         assertThat(predictionResult2).isEqualTo(predictionResult1);
 
