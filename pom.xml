@@ -133,7 +133,15 @@
 			<optional>true</optional>
 		</dependency>
 
-	</dependencies>
+
+		<!-- Only required for disease NER -->
+		<dependency>
+			<groupId>org.ahocorasick</groupId>
+			<artifactId>ahocorasick</artifactId>
+			<version>0.3.0</version>
+		</dependency>
+
+    </dependencies>
 
 	<build>
 		<plugins>
