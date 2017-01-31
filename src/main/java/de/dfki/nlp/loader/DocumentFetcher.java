@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -34,16 +33,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DocumentFetcher {
 
-    private final RestTemplate restTemplate;
     private final AnnotatorConfig annotatorConfig;
-
+    private final RetryHandler retryHandler;
 
     private final XPathFactory xpathFactory = XPathFactory.newInstance();
     private final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
-    public DocumentFetcher(RestTemplate restTemplate, AnnotatorConfig annotatorConfig) {
-        this.restTemplate = restTemplate;
+    public DocumentFetcher(AnnotatorConfig annotatorConfig, RetryHandler retryHandler) {
         this.annotatorConfig = annotatorConfig;
+        this.retryHandler = retryHandler;
     }
 
     public ParsedInputText load(ServerRequest.Document document) {
@@ -57,7 +55,7 @@ public class DocumentFetcher {
                 log.debug("Downloading pubmed {}", document.getDocument_id());
 
                 try {
-                    PubmedArticleSet pubmedArticleSet = restTemplate.getForObject(
+                    PubmedArticleSet pubmedArticleSet = retryHandler.retryableGet(
                             annotatorConfig.pubmed.url,
                             PubmedArticleSet.class, document.getDocument_id());
 
@@ -90,7 +88,7 @@ public class DocumentFetcher {
 
                 try {
 
-                    String pmc = restTemplate.getForObject(
+                    String pmc = retryHandler.retryableGet(
                             annotatorConfig.pmc.url,
                             String.class, document.getDocument_id());
 
@@ -119,7 +117,7 @@ public class DocumentFetcher {
             case "abstract server":
 
                 try {
-                    parsedInputText = restTemplate.getForObject(annotatorConfig.abstractserver.url, ParsedInputText.class, document.getDocument_id());
+                    parsedInputText = retryHandler.retryableGet(annotatorConfig.abstractserver.url, ParsedInputText.class, document.getDocument_id());
 
                     // move text to abstract text
                     parsedInputText.setAbstractText(parsedInputText.getText());
@@ -135,7 +133,7 @@ public class DocumentFetcher {
             case "patent server":
 
                 try {
-                    parsedInputText = restTemplate.getForObject(annotatorConfig.patent.url, ParsedInputText.class, document.getDocument_id());
+                    parsedInputText = retryHandler.retryableGet(annotatorConfig.patent.url, ParsedInputText.class, document.getDocument_id());
                 } catch (RestClientException e) {
                     log.error("Error retrieving patent {}", document.getDocument_id(), e);
                 }
@@ -154,5 +152,6 @@ public class DocumentFetcher {
 
 
     }
+
 
 }

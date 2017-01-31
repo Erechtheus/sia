@@ -10,12 +10,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.integration.config.EnableIntegration;
+import org.springframework.retry.annotation.EnableRetry;
 
 import static de.dfki.nlp.domain.PredictionType.*;
 
 @SpringBootApplication
 @Slf4j
 @EnableIntegration
+@EnableRetry
 public class SethTipsApplication {
 
     public static void main(String[] args) {
