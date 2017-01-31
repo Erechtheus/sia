@@ -65,8 +65,8 @@ public class FlowHandler {
                         .transform(new Annotator())
                         .aggregate()
                         // now merge the results by flattening
-                        .<List<Set<PredictionResult>>, List<PredictionResult>>transform(source ->
-                                source.stream().flatMap(Collection::stream).collect(Collectors.toList()));
+                        .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(source ->
+                                source.stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
 
         if (environment.acceptsProfiles("cloud")) {
@@ -77,7 +77,7 @@ public class FlowHandler {
         } else {
             // for local deployment, just log
             flow
-                    .<List<PredictionResult>>handle((parsed, headers) -> {
+                    .<Set<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
 
                         parsed
