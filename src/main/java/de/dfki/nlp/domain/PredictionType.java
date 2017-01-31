@@ -1,11 +1,13 @@
 package de.dfki.nlp.domain;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public enum PredictionType {
 
-    UNKNOWN, CHEMICAL, PROTEIN, DISEASE, ORGANISM, ANATOMIC_COMPOUND,
-    CELL_LINE_AND_CELL_TYPE, MUTATION, GENE, SUBCELLULAR_STRUCTURE, TISSUE_AND_ORGAN,MIRNA;
+    UNKNOWN, CHEMICAL, PROTEIN, DISEASE, ORGANISM, ANATOMIC_COMPONENT,
+    CELL_LINE_AND_CELL_TYPE, MUTATION, GENE, SUBCELLULAR_STRUCTURE, TISSUE_AND_ORGAN, MIRNA;
 
     /**
      * Handle case insensitive enums, just in case.
@@ -21,6 +23,10 @@ public enum PredictionType {
             }
         }
 
-        return null;
+        log.error("Don't know how to handle Prediction type -> {}", key);
+
+        // catch all
+        return UNKNOWN;
+
     }
 }
