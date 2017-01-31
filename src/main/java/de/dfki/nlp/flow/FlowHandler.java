@@ -1,8 +1,9 @@
 package de.dfki.nlp.flow;
 
+import com.google.common.collect.ComparisonChain;
 import de.dfki.nlp.MirNer;
 import de.dfki.nlp.config.AnnotatorConfig;
-import de.dfki.nlp.diseaseNer.DiseasesNer;
+import de.dfki.nlp.diseasener.DiseasesNer;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionTypes;
@@ -86,9 +87,17 @@ public class FlowHandler {
             flow
                     .<List<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
-                        for (PredictionResult predictionResult : parsed) {
-                            log.info(predictionResult.toString());
-                        }
+
+                        parsed
+                                .stream()
+                                .sorted((o1, o2) -> ComparisonChain
+                                        .start()
+                                        .compare(o1.getDocumentId(), o2.getDocumentId())
+                                        .compare(o1.getSection().name(), o2.getSection().name())
+                                        .compare(o1.getInit(), o2.getInit())
+                                        .result())
+                                .forEach(r -> log.info(r.toString()));
+
                         return null;
                     });
         }

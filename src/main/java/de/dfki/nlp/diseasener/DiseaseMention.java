@@ -1,4 +1,4 @@
-package de.dfki.nlp.diseaseNer;
+package de.dfki.nlp.diseasener;
 
 
 import lombok.AllArgsConstructor;

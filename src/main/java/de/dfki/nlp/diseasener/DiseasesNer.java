@@ -1,4 +1,4 @@
-package de.dfki.nlp.diseaseNer;
+package de.dfki.nlp.diseasener;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.LineProcessor;
