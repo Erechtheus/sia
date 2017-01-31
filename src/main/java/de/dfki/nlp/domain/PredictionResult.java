@@ -2,6 +2,7 @@ package de.dfki.nlp.domain;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.Map;
 })
 @ToString
 @AllArgsConstructor
+@EqualsAndHashCode
 public class PredictionResult {
 
     /**
