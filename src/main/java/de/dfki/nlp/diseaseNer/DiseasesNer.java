@@ -40,7 +40,7 @@ public class DiseasesNer {
                     line = line.replaceAll("#", "");
 
                     if (line.length() > 5 && !line.matches("^[A-Z0-9\\s]*$")) {
-                        allNames.add(line.toLowerCase());
+                        allNames.add(line);
                     }
 
                     return true;
@@ -68,8 +68,7 @@ public class DiseasesNer {
     }
 
     public Stream<DiseaseMention> extractFromText(String text){
-
         Collection<Emit> emits = trie.parseText(text);
-        return emits.stream().map(a -> new DiseaseMention(a.getStart(), a.getEnd(), a.getKeyword()));
+        return emits.stream().map(a -> new DiseaseMention(a.getStart(), a.getEnd(), text.substring(a.getStart(), a.getEnd() + 1)));
     }
 }
