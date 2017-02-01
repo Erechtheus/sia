@@ -6,6 +6,7 @@ import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.loader.DocumentFetcher;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -20,7 +21,11 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.core.MessageHandlerSpec;
 import org.springframework.integration.dsl.support.Function;
+import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
 import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -48,7 +53,8 @@ public class FlowHandler {
                 IntegrationFlows
                         .from(
                                 Amqp.inboundAdapter(connectionFactory, input)
-                                        // set concurrentConsumers - anything larger than 1 gives parallelism per request
+                                        // set concurrentConsumers - anything larger than 1 gives parallelism per annotator request
+                                        // but not the number of requests
                                         .concurrentConsumers(annotatorConfig.getConcurrentConsumer())
                                         .messageConverter(messageConverter)
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
@@ -73,7 +79,9 @@ public class FlowHandler {
             // when cloud profile is active, send results via http
             flow
                     .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
-                    .handleWithAdapter(httpHandler());
+                    // use retry advice - which tries to resend in case of failure
+                    .handleWithAdapter(httpHandler(), e -> e.advice(retryAdvice()));
+
         } else {
             // for local deployment, just log
             flow
@@ -98,33 +106,51 @@ public class FlowHandler {
 
     }
 
-
     /**
-     * Handles the BECALM post requests
+     * This bean is a retry advice to handle failures using retry
+     * finally it fails.
+     * It tries 20 (configurable) times using an exponential backoff strategy:
+     * - initial wait 100ms - default multiplier 2 - maximal wait between calls 30s
+     * <p>
+     * Thus it tries in case of a failure ...
+     * </p>
+     * <pre>
+     * Sleeping for 100
+     * Sleeping for 200
+     * ......
+     * Sleeping for 30000
+     * </pre>
      *
-     * @return the HTTP adapter
+     * @return bean
      */
-    private Function<Adapters, MessageHandlerSpec<?, HttpRequestExecutingMessageHandler>> httpHandler() {
-        return adapters -> adapters
-                .http("http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}")
-                .httpMethod(HttpMethod.POST)
-/*                        .errorHandler(new ResponseErrorHandler() {
-                    @Override
-                    public boolean hasError(ClientHttpResponse response) throws IOException {
-                        // TODO this is not really an error .. just pretend it is one, so we can view the result
-                        return response.getRawStatusCode() != 20;
-                    }
+    @Bean
+    public Advice retryAdvice() {
+        RequestHandlerRetryAdvice advice = new RequestHandlerRetryAdvice();
+        RetryTemplate retryTemplate = new RetryTemplate();
+        // use exponential backoff to wait between calls
+        retryTemplate.setBackOffPolicy(new ExponentialBackOffPolicy());
 
-                    @Override
-                    public void handleError(ClientHttpResponse response) throws IOException {
-                        log.debug(response.getStatusText());
-                        log.debug(IOUtils.toString(response.getBody()));
-                    }
-                })*/
-                .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
-                .uriVariable("communicationId", "headers['communication_id']");
+        // try at most 20 times
+        retryTemplate.setRetryPolicy(new SimpleRetryPolicy(annotatorConfig.becalmSaveAnnotationRetries));
+        advice.setRetryTemplate(retryTemplate);
+        return advice;
     }
 
 
+    /**
+     * Handles the BECALM post requests.
+     *
+     * @return the configured HTTP adapter
+     */
+    private Function<Adapters, MessageHandlerSpec<?, HttpRequestExecutingMessageHandler>> httpHandler() {
+        return adapters -> adapters
+                // where to send the results to
+                .http(annotatorConfig.becalmSaveAnnotationLocation)
+                // use the post method
+                .httpMethod(HttpMethod.POST)
+                // replace URI placeholders using variables
+                .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
+                .uriVariable("communicationId", "headers['communication_id']");
+    }
 
 }

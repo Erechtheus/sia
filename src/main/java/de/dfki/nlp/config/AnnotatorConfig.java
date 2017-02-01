@@ -73,6 +73,15 @@ public class AnnotatorConfig {
     @NotNull
     public Def abstractserver;
 
+    @NotEmpty
+    public String becalmSaveAnnotationLocation;
+
+    /**
+     * In case of an error sending the response to the becalm server, how often should we retry.
+     */
+    @Min(1)
+    @Max(100)
+    public Integer becalmSaveAnnotationRetries;
 
     @NotEmpty
     public String apiKey;
