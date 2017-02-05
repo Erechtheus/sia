@@ -8,8 +8,8 @@ import org.ahocorasick.trie.Trie;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 
 /**
@@ -20,7 +20,7 @@ public class DiseasesNer {
     private final Trie trie;
 
     public DiseasesNer() {
-        this("drugs.dict");
+        this("diseases.dict");
     }
 
     public DiseasesNer(String file) {
@@ -29,7 +29,7 @@ public class DiseasesNer {
         try {
             allNames = Resources.readLines(Resources.getResource(file), Charsets.UTF_8, new LineProcessor<Set<String>>() {
 
-                Set<String> allNames = new TreeSet<>();
+                Set<String> allNames = new HashSet<>();
 
                 @Override
                 public boolean processLine(String line) throws IOException {

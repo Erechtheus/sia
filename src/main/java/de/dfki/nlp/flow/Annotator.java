@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static de.dfki.nlp.domain.PredictionResult.Section.T;
 import static de.dfki.nlp.domain.PredictionType.MUTATION;
 
 /**
@@ -44,16 +45,7 @@ public class Annotator {
         // iterate over the text sections
         for (PredictionResult.Section section : PredictionResult.Section.values()) {
 
-            String analyzetext = null;
-            switch (section) {
-                case T:
-                    analyzetext = payload.getTitle();
-                    break;
-                case A:
-                    analyzetext = payload.getAbstractText();
-                    break;
-            }
-
+            String analyzetext = section == T ? payload.getTitle() : payload.getAbstractText();
             if (analyzetext == null) continue;
 
             for (PredictionType predictionType : types) {
