@@ -66,11 +66,14 @@ public class FlowHandler {
                                 serverRequest.getParameters().getDocuments()
                         )
                         // handle in parallel using an executor on a different channel
-                        .channel(c -> c.executor(Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
+                        .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
                         .transform(ServerRequest.Document.class, documentFetcher::load)
+                        .channel("annotate")
                         .transform(new Annotator())
+                        .channel("aggregate")
                         .aggregate()
                         // now merge the results by flattening
+                        .channel("jointogether")
                         .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(source ->
                                 source.stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
