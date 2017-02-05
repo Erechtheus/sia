@@ -5,12 +5,16 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-public abstract class BaseException extends Exception {
+public class BaseException extends Exception {
 
     String errorCode;
 
     public BaseException(String message, String errorCode) {
         super(message);
         this.errorCode = errorCode;
+    }
+
+    public BaseException(Errors errors) {
+        this(errors.message, errors.errorCode);
     }
 }

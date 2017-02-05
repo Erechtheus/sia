@@ -2,6 +2,7 @@ package de.dfki.nlp.rest;
 
 import com.rabbitmq.client.ConnectionFactory;
 import de.dfki.nlp.config.MessagingConfig;
+import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
@@ -45,7 +46,26 @@ public class RestEndpointTest {
 
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getErrorCode()).isEqualTo("1");
+        assertThat(response.getBody().getErrorCode()).isEqualTo(Errors.FORMAT_ERROR.errorCode);
+
+    }
+
+    @Test
+    public void getErrorEmptyDocuments() throws Exception {
+
+        ServerRequest serverRequest = new ServerRequest();
+        serverRequest.setMethod(ServerRequest.Method.getAnnotations);
+
+        // test empty documents
+        serverRequest.setBecalm_key("boguskey");
+        serverRequest.setName("BeCalm");
+        serverRequest.setParameters(new ServerRequest.Documents());
+
+        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("/call", serverRequest, ErrorResponse.class);
+
+        assertThat(response.getBody().isSuccess()).isFalse();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getErrorCode()).isEqualTo(Errors.NEED_PARAMETERS.errorCode);
 
     }
 
@@ -59,7 +79,8 @@ public class RestEndpointTest {
 
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getErrorCode()).isEqualTo("1");
+        assertThat(response.getBody().getErrorCode()).isEqualTo(Errors.FORMAT_ERROR.errorCode);
+        assertThat(response.getBody().getMessage()).isNotBlank();
 
         // missing parameter
     }
@@ -91,7 +112,7 @@ public class RestEndpointTest {
 
         assertThat(response.getBody().getData()).isInstanceOf(Map.class);
         //noinspection unchecked
-        assertThat((Map<String,?>) response.getBody().getData())
+        assertThat((Map<String, ?>) response.getBody().getData())
                 .hasSize(4)
                 .containsKey("max_analyzable_documents")
                 .containsKey("state")

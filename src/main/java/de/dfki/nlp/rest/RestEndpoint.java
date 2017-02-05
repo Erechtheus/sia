@@ -9,11 +9,16 @@ import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerState;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static de.dfki.nlp.domain.exceptions.Errors.NEED_PARAMETERS;
 
 @RestController
 @Slf4j
@@ -37,7 +42,13 @@ public class RestEndpoint {
                     throw new PayloadException("Request Parameter not set");
                 }
 
-                log.info("Request to analyze {} documents with types : {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes());
+                if (CollectionUtils.isEmpty(serverRequest.getParameters().getDocuments())) {
+                    throw new BaseException("No documents specified", NEED_PARAMETERS.errorCode);
+                }
+
+                Set<String> collect = serverRequest.getParameters().getDocuments().stream().map(ServerRequest.Document::getSource).collect(Collectors.toSet());
+
+                log.info("Request to analyze {} documents with types : {} from {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString());
 
                 // send
                 processGateway.sendForProcessing(serverRequest);

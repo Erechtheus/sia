@@ -4,6 +4,6 @@ public class PayloadException extends BaseException {
 
     public PayloadException(String message) {
         // FORMAT_ERROR
-        super(message, "1");
+        super(message, Errors.FORMAT_ERROR.errorCode);
     }
 }
