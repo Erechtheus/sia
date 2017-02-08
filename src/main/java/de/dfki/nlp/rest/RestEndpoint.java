@@ -48,7 +48,7 @@ public class RestEndpoint {
 
                 Set<String> collect = serverRequest.getParameters().getDocuments().stream().map(ServerRequest.Document::getSource).collect(Collectors.toSet());
 
-                log.info("Request to analyze {} documents with types : {} from {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString());
+                log.info("Request to analyze {} documents with types : {} from {} for id {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id());
 
                 // send
                 processGateway.sendForProcessing(serverRequest);

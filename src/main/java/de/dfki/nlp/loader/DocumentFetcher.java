@@ -59,6 +59,9 @@ public class DocumentFetcher {
                             annotatorConfig.pubmed.url,
                             PubmedArticleSet.class, document.getDocument_id());
 
+                    // the retry handler can return an empty document .. if the parsing fails, or retry is exhausted
+                    // or the document does not contain an article
+                    if(pubmedArticleSet.getPubmedArticleOrPubmedBookArticle().size() == 0) return parsedInputText;
                     // now we get the article
                     Object first = Iterables.getOnlyElement(pubmedArticleSet.getPubmedArticleOrPubmedBookArticle());
 
@@ -92,6 +95,7 @@ public class DocumentFetcher {
                             annotatorConfig.pmc.url,
                             String.class, document.getDocument_id());
 
+                    if(StringUtils.isEmpty(pmc)) return parsedInputText;
 
                     InputSource source = new InputSource(new StringReader(pmc));
 
@@ -109,7 +113,7 @@ public class DocumentFetcher {
                     parsedInputText = new ParsedInputText(document.getDocument_id(), title, abstractT, null);
 
                 } catch (RestClientException | ParserConfigurationException | SAXException | IOException | XPathExpressionException | NullPointerException e) {
-                    log.error("Error retrieving pmc document", e);
+                    log.error("Error retrieving pmc document from {}: {}", e.getMessage());
                 }
 
                 break;

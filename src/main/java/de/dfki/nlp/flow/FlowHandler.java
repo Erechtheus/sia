@@ -1,5 +1,6 @@
 package de.dfki.nlp.flow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ComparisonChain;
 import de.dfki.nlp.config.AnnotatorConfig;
@@ -7,6 +8,7 @@ import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.errors.FailedMessage;
 import de.dfki.nlp.loader.DocumentFetcher;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.aop.Advice;
@@ -30,6 +32,7 @@ import org.springframework.integration.dsl.core.MessageHandlerSpec;
 import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
 import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
+import org.springframework.messaging.MessageHandlingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -60,6 +63,42 @@ public class FlowHandler {
     public FlowHandler(DocumentFetcher documentFetcher, AnnotatorConfig annotatorConfig) {
         this.documentFetcher = documentFetcher;
         this.annotatorConfig = annotatorConfig;
+    }
+
+    @Bean
+    IntegrationFlow errorFlow(ObjectMapper objectMapper) {
+        return IntegrationFlows
+                .from("errorChannel")
+                .handle(MessageHandlingException.class, (payload, headers) -> {
+                    log.error("Failure sending results {}", payload.getMessage());
+
+                    FailedMessage failedMessage = new FailedMessage();
+
+
+                    Integer communicationId = (Integer) payload.getFailedMessage().getHeaders().getOrDefault("communication_id", -1);
+
+                    failedMessage.setCommunicationId(communicationId);
+                    try {
+                        failedMessage.setFailedMessagePayload(objectMapper.writeValueAsString(payload.getFailedMessage().getPayload()));
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize the error message {}", e.getMessage());
+                    }
+
+                    failedMessage.setServerErrorCause(payload.getCause().getMessage());
+
+                    // try to replicate most of the message and the error
+                    if(payload.getCause() instanceof HttpClientErrorException) {
+                        HttpClientErrorException cause = (HttpClientErrorException) payload.getCause();
+
+                        String serverPayload = cause.getResponseBodyAsString();
+                        failedMessage.setServerErrorPayload(serverPayload);
+
+                    }
+
+                    log.error("Failed Message for retry\n{}", failedMessage);
+                    return null;
+                })
+                .get();
     }
 
     @Bean
@@ -146,7 +185,9 @@ public class FlowHandler {
         RequestHandlerRetryAdvice advice = new RequestHandlerRetryAdvice();
         RetryTemplate retryTemplate = new RetryTemplate();
         // use exponential backoff to wait between calls
-        retryTemplate.setBackOffPolicy(new ExponentialBackOffPolicy());
+        ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+        backOffPolicy.setMaxInterval(60000);
+        retryTemplate.setBackOffPolicy(backOffPolicy);
 
         // try at most 20 times
         retryTemplate.setRetryPolicy(new SimpleRetryPolicy(annotatorConfig.becalmSaveAnnotationRetries));
@@ -203,11 +244,11 @@ public class FlowHandler {
                             break;
                         default:
                             log.error("Error from server {}", serverResponse);
-                            throw new HttpClientErrorException(statusCode, serverResponse.toString());
+                            throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.toString().getBytes(), getCharset(response));
                     }
 
 
-                } catch (Exception e) {
+                } catch (IOException e) {
                     log.error("Error parsing", e);
                     throw new HttpClientErrorException(statusCode, response.getStatusText(),
                             response.getHeaders(), responseBody, getCharset(response));

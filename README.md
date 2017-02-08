@@ -23,3 +23,6 @@ The system uses RabbitMQ to load balance, so make sure it is running locally bef
 
     curl -vX POST http://localhost:8080/call -d @src/test/resources/sampleplayloadGetStatus.json --header "Content-Type: application/json"
 
+## close hanging requests
+
+curl -H "Content-Type: application/json" -X POST -d  '' http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}
