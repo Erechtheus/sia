@@ -2,6 +2,8 @@ package de.dfki.nlp.flow;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.PredictionResult;
@@ -87,7 +89,7 @@ public class FlowHandler {
                     failedMessage.setServerErrorCause(payload.getCause().getMessage());
 
                     // try to replicate most of the message and the error
-                    if(payload.getCause() instanceof HttpClientErrorException) {
+                    if (payload.getCause() instanceof HttpClientErrorException) {
                         HttpClientErrorException cause = (HttpClientErrorException) payload.getCause();
 
                         String serverPayload = cause.getResponseBodyAsString();
@@ -227,8 +229,20 @@ public class FlowHandler {
                 // try to inspect the result
                 HttpStatus statusCode = getHttpStatusCode(response);
                 byte[] responseBody = getResponseBody(response);
+                Charset charset = getCharset(response);
 
                 try {
+
+
+                    HttpHeaders headers = response.getHeaders();
+                    MediaType contentType = headers.getContentType();
+
+                    if (contentType != MediaType.APPLICATION_JSON) {
+                        String serverResponse = new String(responseBody, MoreObjects.firstNonNull(charset, Charsets.UTF_8));
+                        log.error("Server did not respond with JSON, but contentType {} - {}", contentType, serverResponse);
+                        throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.getBytes(), charset);
+                    }
+
 
                     ErrorResponse serverResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
 
@@ -244,14 +258,14 @@ public class FlowHandler {
                             break;
                         default:
                             log.error("Error from server {}", serverResponse);
-                            throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.toString().getBytes(), getCharset(response));
+                            throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.toString().getBytes(), charset);
                     }
 
 
                 } catch (IOException e) {
-                    log.error("Error parsing", e);
+                    log.error("Error parsing: {} {}", new String(responseBody), e.getMessage());
                     throw new HttpClientErrorException(statusCode, response.getStatusText(),
-                            response.getHeaders(), responseBody, getCharset(response));
+                            response.getHeaders(), responseBody, charset);
                 }
 
             }
