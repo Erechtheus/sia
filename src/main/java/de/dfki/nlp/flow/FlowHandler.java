@@ -51,7 +51,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -122,7 +121,7 @@ public class FlowHandler {
                                 serverRequest.getParameters().getDocuments()
                         )
                         // handle in parallel using an executor on a different channel
-                        .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
+                     //   .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
                         .transform(ServerRequest.Document.class, documentFetcher::load)
                         .channel("annotate")
                         .transform(new Annotator())
@@ -237,7 +236,7 @@ public class FlowHandler {
                     HttpHeaders headers = response.getHeaders();
                     MediaType contentType = headers.getContentType();
 
-                    if (contentType != MediaType.APPLICATION_JSON) {
+                    if (!contentType.includes(MediaType.APPLICATION_JSON)) {
                         String serverResponse = new String(responseBody, MoreObjects.firstNonNull(charset, Charsets.UTF_8));
                         log.error("Server did not respond with JSON, but contentType {} - {}", contentType, serverResponse);
                         throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.getBytes(), charset);
