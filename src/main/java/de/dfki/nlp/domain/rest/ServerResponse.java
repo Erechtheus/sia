@@ -11,7 +11,7 @@ import java.util.Map;
 @NoArgsConstructor
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ErrorResponse {
+public class ServerResponse {
 
     int status;
     boolean success = false;
@@ -24,7 +24,7 @@ public class ErrorResponse {
 
     Map<String, String> urlParams;
 
-    public ErrorResponse(int status, boolean success, String becalmKey, String message, String errorCode) {
+    public ServerResponse(int status, boolean success, String becalmKey, String message, String errorCode) {
         this.status = status;
         this.success = success;
         this.becalmKey = becalmKey;

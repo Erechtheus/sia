@@ -3,7 +3,7 @@ package de.dfki.nlp.rest;
 import com.google.common.base.Joiner;
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.exceptions.BaseException;
-import de.dfki.nlp.domain.rest.ErrorResponse;
+import de.dfki.nlp.domain.rest.ServerResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.validation.FieldError;
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(value = Exception.class)
-    public ErrorResponse handleException(Exception e) {
+    public ServerResponse handleException(Exception e) {
         log.error("Error", e);
 
         String errorCode = "1";
@@ -36,23 +36,23 @@ public class GlobalExceptionHandler {
             errorCode = "2";
         }
 
-        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), errorCode);
+        return new ServerResponse(400, false, annotatorConfig.apiKey, e.getMessage(), errorCode);
     }
 
     @ExceptionHandler(value = BaseException.class)
-    public ErrorResponse handleCustom(BaseException e) {
+    public ServerResponse handleCustom(BaseException e) {
         log.error("Error", e);
-        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), e.getErrorCode());
+        return new ServerResponse(400, false, annotatorConfig.apiKey, e.getMessage(), e.getErrorCode());
     }
 
     @ExceptionHandler(value = HttpMessageConversionException.class)
-    public ErrorResponse handleHTTPError(HttpMessageConversionException e) {
+    public ServerResponse handleHTTPError(HttpMessageConversionException e) {
         log.error("Error", e);
-        return new ErrorResponse(400, false, annotatorConfig.apiKey, e.getMessage(), "1");
+        return new ServerResponse(400, false, annotatorConfig.apiKey, e.getMessage(), "1");
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
-    public ErrorResponse handleValidationError(MethodArgumentNotValidException e) {
+    public ServerResponse handleValidationError(MethodArgumentNotValidException e) {
         log.error("Error", e);
 
         String message = e.getBindingResult().getAllErrors().stream()
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
                     }
                     return "Error for " + validationError.getObjectName();
                 }).collect(Collectors.joining(". "));
-        return new ErrorResponse(400, false, annotatorConfig.apiKey, message, "1");
+        return new ServerResponse(400, false, annotatorConfig.apiKey, message, "1");
     }
 
 }  

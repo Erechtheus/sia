@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {ObjectMapper.class})
-public class ErrorResponseTest {
+public class ServerResponseTest {
 
     @Autowired
-    private JacksonTester<ErrorResponse> json;
+    private JacksonTester<ServerResponse> json;
 
     @Test
     public void testDeserialize() throws Exception {

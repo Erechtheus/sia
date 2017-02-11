@@ -8,8 +8,8 @@ import com.google.common.collect.ComparisonChain;
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.exceptions.Errors;
-import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.domain.rest.ServerResponse;
 import de.dfki.nlp.errors.FailedMessage;
 import de.dfki.nlp.io.BufferingClientHttpResponseWrapper;
 import de.dfki.nlp.loader.DocumentFetcher;
@@ -246,7 +246,7 @@ public class FlowHandler {
                     // replace URI placeholders using variables
                     .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
                     .uriVariable("communicationId", "headers['communication_id']")
-                    .expectedResponseType(ErrorResponse.class);
+                    .expectedResponseType(ServerResponse.class);
         };
     }
 
@@ -283,7 +283,7 @@ public class FlowHandler {
                     }
 
 
-                    ErrorResponse serverResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
+                    ServerResponse serverResponse = objectMapper.readValue(responseBody, ServerResponse.class);
 
                     // now check the serverResponse
                     if (serverResponse.isSuccess()) {

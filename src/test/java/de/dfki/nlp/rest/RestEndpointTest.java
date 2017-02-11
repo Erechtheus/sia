@@ -3,9 +3,9 @@ package de.dfki.nlp.rest;
 import com.rabbitmq.client.ConnectionFactory;
 import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.exceptions.Errors;
-import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.domain.rest.ServerResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +42,7 @@ public class RestEndpointTest {
         ServerRequest serverRequest = new ServerRequest();
         serverRequest.setMethod(ServerRequest.Method.getAnnotations);
 
-        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("/call", serverRequest, ErrorResponse.class);
+        ResponseEntity<ServerResponse> response = restTemplate.postForEntity("/call", serverRequest, ServerResponse.class);
 
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
@@ -61,7 +61,7 @@ public class RestEndpointTest {
         serverRequest.setName("BeCalm");
         serverRequest.setParameters(new ServerRequest.Documents());
 
-        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("/call", serverRequest, ErrorResponse.class);
+        ResponseEntity<ServerResponse> response = restTemplate.postForEntity("/call", serverRequest, ServerResponse.class);
 
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
@@ -75,7 +75,7 @@ public class RestEndpointTest {
         ServerRequest serverRequest = new ServerRequest();
         serverRequest.setMethod(ServerRequest.Method.getState);
 
-        ResponseEntity<ErrorResponse> response = restTemplate.postForEntity("/call", serverRequest, ErrorResponse.class);
+        ResponseEntity<ServerResponse> response = restTemplate.postForEntity("/call", serverRequest, ServerResponse.class);
 
         assertThat(response.getBody().isSuccess()).isFalse();
         assertThat(response.getBody().getStatus()).isEqualTo(400);
