@@ -1,24 +1,34 @@
 package de.dfki.nlp.domain.rest;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ErrorResponse {
 
     int status;
     boolean success = false;
 
-    @JsonProperty("becalm_key")
-    String key;
+    String becalmKey;
 
     String message;
     String errorCode;
+    String errorName;
 
+    Map<String, String> urlParams;
+
+    public ErrorResponse(int status, boolean success, String becalmKey, String message, String errorCode) {
+        this.status = status;
+        this.success = success;
+        this.becalmKey = becalmKey;
+        this.message = message;
+        this.errorCode = errorCode;
+    }
 }
