@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static de.dfki.nlp.domain.exceptions.Errors.NEED_PARAMETERS;
@@ -50,8 +51,10 @@ public class RestEndpoint {
 
                 log.info("Request to analyze {} documents with types : {} from {} for id {}", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id());
 
+                // calculate ttl - set it to 1 month ...
+                String ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));
                 // send
-                processGateway.sendForProcessing(serverRequest);
+                processGateway.sendForProcessing(serverRequest, ttlInMs);
 
                 return new Response(200, true, annotatorConfig.apiKey, null);
             case getState:

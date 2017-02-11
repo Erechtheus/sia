@@ -8,6 +8,7 @@ import de.dfki.nlp.domain.pubmed.AbstractText;
 import de.dfki.nlp.domain.pubmed.PubmedArticle;
 import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
 import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.io.RetryHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;

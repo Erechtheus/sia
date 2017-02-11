@@ -9,7 +9,7 @@ import lombok.ToString;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "id")
 public class FailedMessage {
 
     String id;

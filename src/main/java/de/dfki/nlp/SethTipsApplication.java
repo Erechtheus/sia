@@ -55,7 +55,7 @@ public class SethTipsApplication {
             message.setParameters(parameters);
 
             // send one test message
-            processingGateway.sendForProcessing(message);
+            processingGateway.sendForProcessing(message, "100000");
 
         };
 

@@ -1,4 +1,4 @@
-package de.dfki.nlp.loader;
+package de.dfki.nlp.io;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.retry.annotation.Backoff;
@@ -21,7 +21,7 @@ public class RetryHandler {
         this.restTemplate = restTemplate;
     }
 
-    @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(multiplier = 2, maxDelay = 60000))
+    @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(value = 1000, multiplier = 2, maxDelay = 60000))
     public <T> T retryableGet(String urlpattern, Class<T> responseType, Object... uriVariables) {
         return restTemplate.getForObject(urlpattern, responseType, uriVariables);
     }

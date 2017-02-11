@@ -3,6 +3,7 @@ package de.dfki.nlp.config;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.handler.annotation.Header;
 
 @Configuration
 @IntegrationComponentScan
@@ -43,7 +45,7 @@ public class MessagingConfig {
 
     @MessagingGateway(defaultRequestChannel = "requestChannel")
     public interface ProcessingGateway {
-        void sendForProcessing(ServerRequest data);
+        void sendForProcessing(ServerRequest data, @Header(AmqpHeaders.EXPIRATION) String ttlInMs);
     }
 
     @Bean

@@ -11,11 +11,14 @@ import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.ErrorResponse;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.errors.FailedMessage;
+import de.dfki.nlp.io.BufferingClientHttpResponseWrapper;
 import de.dfki.nlp.loader.DocumentFetcher;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -32,17 +35,19 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.amqp.Amqp;
 import org.springframework.integration.dsl.core.MessageHandlerSpec;
 import org.springframework.integration.dsl.support.Function;
+import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
 import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
 import org.springframework.messaging.MessageHandlingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
+import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
 import java.io.IOException;
@@ -53,39 +58,39 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
+
 @Slf4j
 @Component
+@AllArgsConstructor
 public class FlowHandler {
 
     private final DocumentFetcher documentFetcher;
 
     private final AnnotatorConfig annotatorConfig;
 
-    public FlowHandler(DocumentFetcher documentFetcher, AnnotatorConfig annotatorConfig) {
-        this.documentFetcher = documentFetcher;
-        this.annotatorConfig = annotatorConfig;
-    }
+    private final ObjectMapper objectMapper;
+
 
     @Bean
-    IntegrationFlow errorFlow(ObjectMapper objectMapper) {
-        return IntegrationFlows
-                .from("errorChannel")
+    IntegrationFlow errorSendingResults() {
+        return f -> f
                 .handle(MessageHandlingException.class, (payload, headers) -> {
-                    log.error("Failure sending results {}", payload.getMessage());
 
                     FailedMessage failedMessage = new FailedMessage();
 
 
                     Integer communicationId = (Integer) payload.getFailedMessage().getHeaders().getOrDefault("communication_id", -1);
-
                     failedMessage.setCommunicationId(communicationId);
+                    log.error("Failure sending results [{}] {}", communicationId, payload.getMessage());
+
                     try {
                         failedMessage.setFailedMessagePayload(objectMapper.writeValueAsString(payload.getFailedMessage().getPayload()));
                     } catch (JsonProcessingException e) {
                         log.error("Could not serialize the error message {}", e.getMessage());
                     }
 
-                    failedMessage.setServerErrorCause(payload.getCause().getMessage());
+                    failedMessage.setServerErrorCause(payload.getMessage());
 
                     // try to replicate most of the message and the error
                     if (payload.getCause() instanceof HttpClientErrorException) {
@@ -96,11 +101,23 @@ public class FlowHandler {
 
                     }
 
-                    log.error("Failed Message for retry\n{}", failedMessage);
+                    try {
+                        log.error("The complete failed message for retrying\n{}", objectMapper.writeValueAsString(failedMessage));
+                    } catch (JsonProcessingException e) {
+                        log.error("Double error ...  {}", e.getMessage());
+                        log.error("The complete failed message for retrying\n{}", failedMessage);
+                    }
                     return null;
-                })
-                .get();
+                });
     }
+
+    @Bean
+    public RetryOperationsInterceptor retryOperationsInterceptor() {
+        return stateless()
+                .maxAttempts(2)
+                .recoverer(new RejectAndDontRequeueRecoverer()).build();
+    }
+
 
     @Bean
     IntegrationFlow flow(ConnectionFactory connectionFactory, Queue input, Jackson2JsonMessageConverter messageConverter, Environment environment) {
@@ -113,6 +130,11 @@ public class FlowHandler {
                                         .concurrentConsumers(annotatorConfig.getConcurrentConsumer())
                                         .messageConverter(messageConverter)
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
+                                        // retry the complete message
+                                        // if this fails ... forward to the error queue
+                                        .defaultRequeueRejected(false)
+                                        .adviceChain(retryOperationsInterceptor())
+                                        .errorChannel("errorSendingResults.input")
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
@@ -121,7 +143,7 @@ public class FlowHandler {
                                 serverRequest.getParameters().getDocuments()
                         )
                         // handle in parallel using an executor on a different channel
-                     //   .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
+                        //   .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
                         .transform(ServerRequest.Document.class, documentFetcher::load)
                         .channel("annotate")
                         .transform(new Annotator())
@@ -137,8 +159,11 @@ public class FlowHandler {
             // when cloud profile is active, send results via http
             flow
                     .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
+                    .log(LoggingHandler.Level.INFO, objectMessage ->
+                            String.format("Sending Results [%s] %s", objectMessage.getHeaders().get("communication_id"), objectMessage.getHeaders().toString()))
+                    //"respone", "headers['communication_id']")
                     // use retry advice - which tries to resend in case of failure
-                    .handleWithAdapter(httpHandler(), e -> e.advice(retryAdvice()));
+                    .handleWithAdapter(sendToBecalmServer(), e -> e.advice(retryAdvice()));
 
         } else {
             // for local deployment, just log
@@ -164,6 +189,7 @@ public class FlowHandler {
 
     }
 
+
     /**
      * This bean is a retry advice to handle failures using retry
      * finally it fails.
@@ -187,6 +213,8 @@ public class FlowHandler {
         RetryTemplate retryTemplate = new RetryTemplate();
         // use exponential backoff to wait between calls
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
+        backOffPolicy.setInitialInterval(1000);
+        backOffPolicy.setMultiplier(2);
         backOffPolicy.setMaxInterval(60000);
         retryTemplate.setBackOffPolicy(backOffPolicy);
 
@@ -202,24 +230,36 @@ public class FlowHandler {
      *
      * @return the configured HTTP adapter
      */
-    private Function<Adapters, MessageHandlerSpec<?, HttpRequestExecutingMessageHandler>> httpHandler() {
-        return adapters -> adapters
-                // where to send the results to
-                .http(annotatorConfig.becalmSaveAnnotationLocation)
-                // use the post method
-                .httpMethod(HttpMethod.POST)
-                // replace URI placeholders using variables
-                .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
-                .uriVariable("communicationId", "headers['communication_id']")
-                .errorHandler(errorHandler());
+    private Function<Adapters, MessageHandlerSpec<?, HttpRequestExecutingMessageHandler>> sendToBecalmServer() {
+        return adapters -> {
+            RestTemplate restTemplate = new RestTemplate();
+            // we need to use a custom interceptor to allow multiple reading of the respons body
+            // once to check if we have an error, a second time to see the results (if there was no error)
+            restTemplate.getInterceptors().add(new BufferingClientHttpResponseWrapper());
+            restTemplate.setErrorHandler(errorHandler());
+
+            return adapters
+                    // where to send the results to
+                    .http(annotatorConfig.becalmSaveAnnotationLocation, restTemplate)
+                    // use the post method
+                    .httpMethod(HttpMethod.POST)
+                    // replace URI placeholders using variables
+                    .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
+                    .uriVariable("communicationId", "headers['communication_id']")
+                    .expectedResponseType(ErrorResponse.class);
+        };
     }
 
 
     @Bean
     ResponseErrorHandler errorHandler() {
-        return new DefaultResponseErrorHandler() {
+        return new ResponseErrorHandler() {
 
-            ObjectMapper objectMapper = new ObjectMapper();
+            @Override
+            public boolean hasError(ClientHttpResponse response) throws IOException {
+               // todo check success
+                return true;
+            }
 
             @Override
             public void handleError(ClientHttpResponse response) throws IOException {
@@ -247,22 +287,23 @@ public class FlowHandler {
 
                     // now check the serverResponse
                     if (serverResponse.isSuccess()) {
-                        log.info("Success sending results {}", serverResponse);
+                        log.info("Success sending results: {}", serverResponse);
                         return;
                     }
 
                     switch (Errors.lookup(serverResponse.getErrorCode())) {
 
                         case REQUEST_CLOSED: // no error - we have sent it once .. continue
+                            log.info("Posting results - assuming we don't have an error as server responded with {}", serverResponse.toString());
                             break;
                         default:
-                            log.error("Error from server {}", serverResponse);
+                            log.error("Error posting results to server: {} ", serverResponse);
                             throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.toString().getBytes(), charset);
                     }
 
 
                 } catch (IOException e) {
-                    log.error("Error parsing: {} {}", new String(responseBody), e.getMessage());
+                    log.error("Error parsing Server Response: {} {}", new String(responseBody), e.getMessage());
                     throw new HttpClientErrorException(statusCode, response.getStatusText(),
                             response.getHeaders(), responseBody, charset);
                 }
@@ -301,5 +342,6 @@ public class FlowHandler {
 
         };
     }
+
 
 }
