@@ -54,5 +54,25 @@ public class MessagingConfig {
     }
 
 
+    @Bean
+    public MessageChannel seth() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel mirner() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel diseases() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel parsed() {
+        return new DirectChannel();
+    }
+
 
 }

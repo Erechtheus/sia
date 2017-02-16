@@ -43,7 +43,8 @@ public class SethTipsApplication {
                     new ServerRequest.Document("US20110195924", "Patent Server"),
 
                     new ServerRequest.Document("10022392", "ABSTRACT SERVER"),
-                    new ServerRequest.Document("10022392", "PUBMED")
+                    new ServerRequest.Document("10022392", "PUBMED"),
+                    new ServerRequest.Document("1422080", "ABSTRACT SERVER")
 
                     )
             );

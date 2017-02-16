@@ -1,6 +1,8 @@
 package de.dfki.nlp.flow;
 
-import com.google.common.collect.Lists;
+import de.dfki.nlp.annotator.DiseasesNERAnnotator;
+import de.dfki.nlp.annotator.MirNERAnnotator;
+import de.dfki.nlp.annotator.SethAnnotator;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionResult.Section;
@@ -17,7 +19,10 @@ public class AnnotatorTest {
 
     private static final String EXTERNAL_ID = "1-1-2";
 
-    private Annotator annotator = new Annotator();
+    SethAnnotator sethAnnotator = new SethAnnotator();
+    DiseasesNERAnnotator diseasesNERAnnotator = new DiseasesNERAnnotator();
+    MirNERAnnotator mirNERAnnotator = new MirNERAnnotator();
+
     private ParsedInputText payload;
 
     @Before
@@ -27,17 +32,9 @@ public class AnnotatorTest {
 
 
     @Test
-    public void performAnnotationWithNoTypes() throws Exception {
-
-        Set<PredictionResult> predictionResults = annotator.performAnnotation(payload, Lists.newArrayList());
-        assertThat(predictionResults).hasSize(0);
-
-    }
-
-    @Test
     public void performAnnotationWithDisease() throws Exception {
 
-        Set<PredictionResult> predictionResults = annotator.performAnnotation(payload, Lists.newArrayList(PredictionType.DISEASE));
+        Set<PredictionResult> predictionResults = diseasesNERAnnotator.annotate(payload);
         assertThat(predictionResults).hasSize(2).extracting("documentId").containsExactlyInAnyOrder(EXTERNAL_ID, EXTERNAL_ID);
         assertThat(predictionResults).extracting("documentId").containsExactlyInAnyOrder(EXTERNAL_ID, EXTERNAL_ID);
         assertThat(predictionResults).extracting("section").containsExactlyInAnyOrder(Section.A, Section.T);
@@ -49,7 +46,7 @@ public class AnnotatorTest {
     @Test
     public void performAnnotationWithSETH() throws Exception {
 
-        Set<PredictionResult> predictionResults = annotator.performAnnotation(payload, Lists.newArrayList(PredictionType.MUTATION));
+        Set<PredictionResult> predictionResults = sethAnnotator.annotate(payload);
         assertThat(predictionResults).hasSize(1).extracting("documentId").contains(EXTERNAL_ID);
         assertThat(predictionResults).extracting("section").containsExactlyInAnyOrder(Section.A);
         assertThat(predictionResults).extracting("annotatedText").contains("Leu466Arg");
@@ -59,12 +56,12 @@ public class AnnotatorTest {
     @Test
     public void performAnnotationWithMirNer() throws Exception {
 
-        Set<PredictionResult> predictionResults = annotator.performAnnotation(payload, Lists.newArrayList(PredictionType.MIRNA));
+        Set<PredictionResult> predictionResults = mirNERAnnotator.annotate(payload);
         assertThat(predictionResults).hasSize(1).extracting("documentId").contains(EXTERNAL_ID);
         assertThat(predictionResults).extracting("section").containsExactlyInAnyOrder(Section.A);
         assertThat(predictionResults).extracting("annotatedText").contains("miR-199b*");
 
-        assertThat(predictionResults).contains(new PredictionResult(EXTERNAL_ID, Section.A, 35,44,1.0,"miR-199b*", PredictionType.MIRNA));
+        assertThat(predictionResults).contains(new PredictionResult(EXTERNAL_ID, Section.A, 35, 44, 1.0, "miR-199b*", PredictionType.MIRNA));
 
     }
 

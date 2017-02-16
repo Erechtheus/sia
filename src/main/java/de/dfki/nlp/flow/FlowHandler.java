@@ -16,6 +16,7 @@ import de.dfki.nlp.loader.DocumentFetcher;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.aop.Advice;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
@@ -134,7 +135,7 @@ public class FlowHandler {
                                         // if this fails ... forward to the error queue
                                         .defaultRequeueRejected(false)
                                         .adviceChain(retryOperationsInterceptor())
-                                        .errorChannel("errorSendingResults.input")
+                                //.errorChannel("errorSendingResults.input")
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
@@ -146,13 +147,21 @@ public class FlowHandler {
                         //   .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
                         .transform(ServerRequest.Document.class, documentFetcher::load)
                         .channel("annotate")
-                        .transform(new Annotator())
+                        .routeToRecipients(r ->
+                                r.applySequence(true)
+                                        .defaultOutputToParentFlow()
+                                        .recipient("mirner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MIRNA)")
+                                        .recipient("seth", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MUTATION)")
+                                        .recipient("diseases", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
+                        )
+                        .channel("parsed")
+                        .aggregate()
                         .channel("aggregate")
                         .aggregate()
                         // now merge the results by flattening
                         .channel("jointogether")
-                        .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(source ->
-                                source.stream().flatMap(Collection::stream).collect(Collectors.toSet()));
+                        .<List<List<Set<PredictionResult>>>, Set<PredictionResult>>transform(source ->
+                                source.stream().flatMap(Collection::stream).flatMap(Collection::stream).collect(Collectors.toSet()));
 
 
         if (environment.acceptsProfiles("cloud")) {
@@ -257,7 +266,7 @@ public class FlowHandler {
 
             @Override
             public boolean hasError(ClientHttpResponse response) throws IOException {
-               // todo check success
+                // todo check success
                 return true;
             }
 
@@ -278,7 +287,7 @@ public class FlowHandler {
 
                     if (!contentType.includes(MediaType.APPLICATION_JSON)) {
                         String serverResponse = new String(responseBody, MoreObjects.firstNonNull(charset, Charsets.UTF_8));
-                        log.error("Server did not respond with JSON, but contentType {} - {}", contentType, serverResponse);
+                        log.error("Server did not respond with JSON, but contentType {} - {}", contentType, StringUtils.replaceAll(serverResponse, "[\\r\\n]+", " "));
                         throw new HttpClientErrorException(statusCode, response.getStatusText(), response.getHeaders(), serverResponse.getBytes(), charset);
                     }
 
