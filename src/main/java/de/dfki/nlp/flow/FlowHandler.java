@@ -155,9 +155,9 @@ public class FlowHandler {
                                         .recipient("diseases", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
                         )
                         .channel("parsed")
-                        .aggregate()
+                        .aggregate() // this aggregates annotations per document (from router)
                         .channel("aggregate")
-                        .aggregate()
+                        .aggregate() // this aggregates all document annotations
                         // now merge the results by flattening
                         .channel("jointogether")
                         .<List<List<Set<PredictionResult>>>, Set<PredictionResult>>transform(source ->

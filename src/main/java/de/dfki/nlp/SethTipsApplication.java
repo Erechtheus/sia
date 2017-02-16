@@ -50,7 +50,7 @@ public class SethTipsApplication {
             );
 
             parameters.setCommunication_id(-1);
-            parameters.setTypes(Lists.newArrayList(DISEASE, MIRNA, MUTATION));
+            parameters.setTypes(Lists.newArrayList(DISEASE, MIRNA, MUTATION, CHEMICAL));
             // TODO re-enable
             //parameters.setExpired(Date.from(ZonedDateTime.now(ZoneId.of("Europe/Berlin")).plusMinutes(30).toInstant()));
             message.setParameters(parameters);
