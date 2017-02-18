@@ -1,8 +1,8 @@
 package de.dfki.nlp;
 
 import com.google.common.collect.Lists;
-import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.rest.RestEndpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -26,7 +26,7 @@ public class SethTipsApplication {
 
     @Bean
     @Profile("!cloud")
-    CommandLineRunner commandLineRunner(MessagingConfig.ProcessingGateway processingGateway) {
+    CommandLineRunner commandLineRunner(RestEndpoint endpoint) {
 
         // this sends a test message when the cloud profile is not active
 
@@ -54,9 +54,9 @@ public class SethTipsApplication {
             // TODO re-enable
             //parameters.setExpired(Date.from(ZonedDateTime.now(ZoneId.of("Europe/Berlin")).plusMinutes(30).toInstant()));
             message.setParameters(parameters);
-
+            message.setMethod(ServerRequest.Method.getAnnotations);
             // send one test message
-            processingGateway.sendForProcessing(message, "100000");
+            endpoint.getAnnotations(message);
 
         };
 
