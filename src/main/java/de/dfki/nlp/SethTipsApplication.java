@@ -12,6 +12,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.retry.annotation.EnableRetry;
 
+import java.time.Instant;
+import java.util.Date;
+
 import static de.dfki.nlp.domain.PredictionType.*;
 
 @SpringBootApplication
@@ -48,6 +51,8 @@ public class SethTipsApplication {
 
                     )
             );
+
+            parameters.setExpired(Date.from(Instant.now().plusSeconds(60)));
 
             parameters.setCommunication_id(-1);
             parameters.setTypes(Lists.newArrayList(DISEASE, MIRNA, MUTATION, CHEMICAL));

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -48,6 +50,13 @@ public class RestEndpoint {
                 }
 
                 Set<String> collect = serverRequest.getParameters().getDocuments().stream().map(ServerRequest.Document::getSource).collect(Collectors.toSet());
+
+
+                // calculate how long we have time to process in seconds
+                Instant expirey = serverRequest.getParameters().getExpired().toInstant();
+                Duration duration = Duration.between(Instant.now(), expirey);
+
+                log.info("We have {} seconds to fullfill the request", duration.getSeconds());
 
                 log.info("Request to analyze {} documents with types : {} from {} for id {} - with expiry date [{}]", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id(), serverRequest.getParameters().getExpired());
 

@@ -20,7 +20,7 @@ public class RetryHandler {
 
     private final RestTemplate restTemplate;
 
-    RetryHandler(RestTemplate restTemplate) {
+    public RetryHandler(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
@@ -35,6 +35,24 @@ public class RetryHandler {
                 throw new ResourceAccessException("Client Error " + ex.getMessage());
             } else {
                 log.error("Error '{}' downloading document id {} from {}", ex.getMessage(), uriVariables, urlpattern);
+            }
+        }
+
+        return BeanUtils.instantiate(responseType);
+
+    }
+
+    @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(value = 1000, multiplier = 2, maxDelay = 60000))
+    public <T> T retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
+
+        try {
+            return restTemplate.postForObject(urlpattern, request, responseType, uriVariables);
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode() != HttpStatus.NOT_FOUND) {
+                // retry
+                throw new ResourceAccessException("Client Error " + ex.getMessage());
+            } else {
+                log.error("Error '{}' downloading documents {} from {}", ex.getMessage(), uriVariables, urlpattern);
             }
         }
 

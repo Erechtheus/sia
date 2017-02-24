@@ -6,6 +6,10 @@ import de.dfki.nlp.config.CustomObjectMapper;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 
@@ -37,7 +41,8 @@ public class ServerRequestJSONTest {
 
         ServerRequest serverRequest = customObjectMapper.readValue(Resources.getResource("samplepayloadGetannotations.json"), ServerRequest.class);
 
-        assertThat(serverRequest.getParameters().getExpired()).isNotNull();
-
+        assertThat(serverRequest.getParameters().getExpired())
+                .isNotNull()
+                .isEqualTo(Date.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse("2017-02-22T03:14:00+01:00", Instant::from)));
     }
 }

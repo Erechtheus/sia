@@ -39,7 +39,7 @@ import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
 import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
-import org.springframework.messaging.MessageHandlingException;
+import org.springframework.messaging.MessagingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -76,10 +76,9 @@ public class FlowHandler {
     @Bean
     IntegrationFlow errorSendingResults() {
         return f -> f
-                .handle(MessageHandlingException.class, (payload, headers) -> {
+                .handle(MessagingException.class, (payload, headers) -> {
 
                     FailedMessage failedMessage = new FailedMessage();
-
 
                     Integer communicationId = (Integer) payload.getFailedMessage().getHeaders().getOrDefault("communication_id", -1);
                     failedMessage.setCommunicationId(communicationId);
@@ -135,7 +134,7 @@ public class FlowHandler {
                                         // if this fails ... forward to the error queue
                                         .defaultRequeueRejected(false)
                                         .adviceChain(retryOperationsInterceptor())
-                                //.errorChannel("errorSendingResults.input")
+                                        .errorChannel("errorSendingResults.input")
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
