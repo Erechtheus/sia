@@ -4,7 +4,7 @@
 
 ## Project description
 Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task [TIPS](http://www.becalm.eu/files/material/BioCreative.V.5_CFP.pdf).
-Annotations for mutation mentions are generated using [SETH](https://github.com/rockt/SETH), and returned in JSON according to these  [definitions](http://www.becalm.eu/files/schemas/jsonSchema.json). 
+Annotations for mutation mentions are generated using [SETH](https://github.com/rockt/SETH), [mirNer](https://github.com/Erechtheus/mirNer), and diseases using a dictionary lookup. Results are returned in JSON according to these  [definitions](http://www.becalm.eu/files/schemas/jsonSchema.json). 
 
 
 ## Getting Started
