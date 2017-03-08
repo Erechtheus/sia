@@ -57,9 +57,9 @@ public class DiseasesNer {
         }
 
         Trie.TrieBuilder builder = Trie.builder()
-                .caseInsensitive()
+                .ignoreCase()
                 .onlyWholeWords()
-                .removeOverlaps();
+                .ignoreOverlaps();
 
         allNames.forEach(builder::addKeyword);
 
