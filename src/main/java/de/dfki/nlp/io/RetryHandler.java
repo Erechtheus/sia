@@ -11,6 +11,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Optional;
+
 /**
  * Simple Wrapper around RestTemplate, which retries to download documents, in case of failures.
  */
@@ -43,31 +45,38 @@ public class RetryHandler {
     }
 
     @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(value = 1000, multiplier = 2, maxDelay = 60000))
-    public <T> T retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
+    public <T> Optional<T> retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
 
         try {
 
-            return restTemplate.postForObject(urlpattern, request, responseType, uriVariables);
+            return Optional.of(restTemplate.postForObject(urlpattern, request, responseType, uriVariables));
 
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode() != HttpStatus.NOT_FOUND) {
                 // retry
                 throw new ResourceAccessException("Client Error " + ex.getMessage());
             } else {
-                log.error("Error '{}' downloading documents {} from {}", ex.getMessage(), uriVariables, urlpattern);
+                log.error("Error '{}' downloading documents {} from {}", ex.getMessage(), request, urlpattern);
             }
         }
 
-        return BeanUtils.instantiate(responseType);
+        // return empty
+        return Optional.empty();
 
     }
 
     // handle 404
 
     @Recover
-    public <T> T recover(ResourceAccessException e, String urlpattern, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
+    public <T> T recoverGet(ResourceAccessException e, String urlpattern, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
         log.error("Failed to download after 10 tries {} ... continuing", e.getMessage());
         return responseType.newInstance();
+    }
+
+    @Recover
+    public <T> Optional<T> recoverPost(ResourceAccessException e, String urlpattern, Object request, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
+        log.error("Failed to download after 10 tries {} ... continuing", e.getMessage());
+        return Optional.empty();
     }
 
 }
