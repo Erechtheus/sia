@@ -21,10 +21,10 @@ import static de.dfki.nlp.domain.PredictionType.*;
 @Slf4j
 @EnableIntegration
 @EnableRetry
-public class SethTipsApplication {
+public class SiaMainApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SethTipsApplication.class, args);
+        SpringApplication.run(SiaMainApplication.class, args);
     }
 
     @Bean

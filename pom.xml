@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.dfki.nlp</groupId>
-	<artifactId>seth-tips</artifactId>
+	<artifactId>sia</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>seth-tips</name>
-	<description>Seth-tips is an annotation service according to the BioCreative V.5. BeCalm task</description>
+	<name>sia</name>
+	<description>SIA is an annotation service according to the BioCreative V.5. BeCalm task</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
