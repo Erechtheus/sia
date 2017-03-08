@@ -36,6 +36,14 @@ public class AnnotatorConfig {
     @Max(100)
     public int concurrentHandler;
 
+
+    /**
+     * How many documents should be retrieved at once.
+     */
+    @Min(1)
+    @Max(100)
+    public int requestBulkSize = 10;
+
     /**
      * Maximum number of accepted documents per day.
      */

@@ -1,8 +1,10 @@
 package de.dfki.nlp.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.config.GeneralConfig;
+import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.io.RetryHandler;
@@ -14,17 +16,23 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ContextConfiguration(classes = {GeneralConfig.class, DocumentFetcher.class, ObjectMapper.class, RetryHandler.class})
+@ContextConfiguration(classes = {GeneralConfig.class,
+        MultiDocumentFetcher.class,
+        ObjectMapper.class,
+        RetryHandler.class,
+        PubMedDocumentFetcher.class, AbstractServerFetcher.class, PMCDocumentFetcher.class, PatentServerFetcher.class})
 @EnableConfigurationProperties(AnnotatorConfig.class)
 public class DocumentFetcherTest {
 
     @Autowired
-    private DocumentFetcher documentFetcher;
+    private MultiDocumentFetcher documentFetcher;
 
     @Test
     public void testNotImplementedLoader() throws Exception {
@@ -78,10 +86,15 @@ public class DocumentFetcherTest {
 
         ParsedInputText noDocument = documentFetcher.load(new ServerRequest.Document("12211244", "PMC"));
 
-        assertThat(noDocument.getExternalId()).isEqualTo("12211244");
+        assertThat(noDocument.getExternalId()).isNull();
         assertThat(noDocument.getTitle()).isNull();
         assertThat(noDocument.getAbstractText()).isNull();
 
+        // now check multiple
+        List<String> multipleId = Lists.newArrayList("BC1403855C", "20255", "20255");
+        List<ParsedInputText> multiple = documentFetcher.load(new IdList("PMC", multipleId));
+
+        assertThat(multiple).hasSize(3).extracting("externalId").containsExactlyElementsOf(multipleId);
 
     }
 }

@@ -62,7 +62,6 @@ public class AnnotatorTest {
         assertThat(predictionResults).extracting("annotatedText").contains("miR-199b*");
 
         assertThat(predictionResults).contains(new PredictionResult(EXTERNAL_ID, Section.A, 35, 44, 1.0, "miR-199b*", PredictionType.MIRNA));
-
     }
 
 

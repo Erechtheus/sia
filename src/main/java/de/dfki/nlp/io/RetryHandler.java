@@ -46,7 +46,9 @@ public class RetryHandler {
     public <T> T retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
 
         try {
+
             return restTemplate.postForObject(urlpattern, request, responseType, uriVariables);
+
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode() != HttpStatus.NOT_FOUND) {
                 // retry

@@ -5,14 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimaps;
 import de.dfki.nlp.config.AnnotatorConfig;
+import de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
+import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerResponse;
 import de.dfki.nlp.errors.FailedMessage;
 import de.dfki.nlp.io.BufferingClientHttpResponseWrapper;
-import de.dfki.nlp.loader.DocumentFetcher;
+import de.dfki.nlp.loader.MultiDocumentFetcher;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.aop.Advice;
@@ -54,9 +59,7 @@ import org.springframework.web.client.UnknownHttpStatusCodeException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
@@ -66,7 +69,7 @@ import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.sta
 @AllArgsConstructor
 public class FlowHandler {
 
-    private final DocumentFetcher documentFetcher;
+    private final MultiDocumentFetcher documentFetcher;
 
     private final AnnotatorConfig annotatorConfig;
 
@@ -138,13 +141,27 @@ public class FlowHandler {
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
-                        .split(ServerRequest.class, serverRequest ->
-                                // split documents
-                                serverRequest.getParameters().getDocuments()
+                        .split(ServerRequest.class, serverRequest -> {
+                                    // partition the input
+                                    ImmutableListMultimap<String, ServerRequest.Document> index = Multimaps.index(serverRequest.getParameters()
+                                            .getDocuments(), ServerRequest.Document::getSource);
+
+                                    List<IdList> idLists = new ArrayList<>();
+
+                                    // now split into X at most per source
+                                    for (Map.Entry<String, Collection<ServerRequest.Document>> entry : index.asMap().entrySet()) {
+                                        for (List<ServerRequest.Document> documentList : Iterables.partition(entry.getValue(), annotatorConfig.getRequestBulkSize())) {
+                                            idLists.add(new IdList(entry.getKey(), documentList.stream().map(ServerRequest.Document::getDocument_id).collect(Collectors.toList())));
+                                        }
+                                    }
+
+                                    return idLists;
+                                }
                         )
                         // handle in parallel using an executor on a different channel
                         //   .channel(c -> c.executor("Downloader", Executors.newFixedThreadPool(annotatorConfig.getConcurrentHandler())))
-                        .transform(ServerRequest.Document.class, documentFetcher::load)
+                        .transform(IdList.class, documentFetcher::load)
+                        .split()
                         .channel("annotate")
                         .routeToRecipients(r ->
                                 r.applySequence(true)
@@ -155,8 +172,10 @@ public class FlowHandler {
                         )
                         .channel("parsed")
                         .aggregate() // this aggregates annotations per document (from router)
+                        .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(s -> s.stream().flatMap(Collection::stream).collect(Collectors.toSet()))
                         .channel("aggregate")
-                        .aggregate() // this aggregates all document annotations
+                        .aggregate() // this aggregates all document per source group
+                        .aggregate() // this aggregates all documents
                         // now merge the results by flattening
                         .channel("jointogether")
                         .<List<List<Set<PredictionResult>>>, Set<PredictionResult>>transform(source ->
@@ -168,7 +187,7 @@ public class FlowHandler {
             flow
                     .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("Content-Type", "'application/json'"))
                     .log(LoggingHandler.Level.INFO, objectMessage ->
-                            String.format("Sending Results [%s] %s", objectMessage.getHeaders().get("communication_id"), objectMessage.getHeaders().toString()))
+                            String.format("Sending Results [%s] after %d ms %s", objectMessage.getHeaders().get("communication_id"), (System.currentTimeMillis() - (long) objectMessage.getHeaders().get(ProcessingGateway.HEADER_REQUEST_TIME)), objectMessage.getHeaders().toString()))
                     //"respone", "headers['communication_id']")
                     // use retry advice - which tries to resend in case of failure
                     .handleWithAdapter(sendToBecalmServer(), e -> e.advice(retryAdvice()));
@@ -178,6 +197,8 @@ public class FlowHandler {
             flow
                     .<Set<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
+
+                        log.info("Annotation request took {} ms", (System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME)));
 
                         parsed
                                 .stream()
@@ -350,6 +371,5 @@ public class FlowHandler {
 
         };
     }
-
 
 }

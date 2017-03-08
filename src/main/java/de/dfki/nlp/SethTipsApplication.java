@@ -40,13 +40,14 @@ public class SethTipsApplication {
                     new ServerRequest.Document("CA2073855C", "Patent Server"),
                     new ServerRequest.Document("24218123", "PUBMED"),
                     new ServerRequest.Document("BC1403855C", "PMC"),
+                    new ServerRequest.Document("PMC20255", "PMC"),
                     new ServerRequest.Document("US20080038365", "Patent Server"),
                     new ServerRequest.Document("WO2010032704A1", "Patent Server"),
                     new ServerRequest.Document("WO2012005339A1", "Patent Server"),
                     new ServerRequest.Document("US20110195924", "Patent Server"),
 
-                    new ServerRequest.Document("10022392", "ABSTRACT SERVER"),
                     new ServerRequest.Document("10022392", "PUBMED"),
+                    new ServerRequest.Document("10022392", "ABSTRACT SERVER"),
                     new ServerRequest.Document("1422080", "ABSTRACT SERVER")
 
                     )

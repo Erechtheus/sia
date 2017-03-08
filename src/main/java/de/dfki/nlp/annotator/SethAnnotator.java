@@ -7,6 +7,7 @@ import org.springframework.integration.annotation.Transformer;
 import org.springframework.stereotype.Component;
 import seth.SETH;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +24,8 @@ public class SethAnnotator implements Annotator {
 
     @Transformer(inputChannel = "seth", outputChannel = "parsed")
     public Set<PredictionResult> annotate(ParsedInputText payload) {
+
+        if (payload.getExternalId() == null) return Collections.emptySet();
 
         log.trace("Parsing {}", payload.getExternalId());
 

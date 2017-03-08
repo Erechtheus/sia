@@ -45,7 +45,11 @@ public class MessagingConfig {
 
     @MessagingGateway(defaultRequestChannel = "requestChannel")
     public interface ProcessingGateway {
-        void sendForProcessing(ServerRequest data, @Header(AmqpHeaders.EXPIRATION) String ttlInMs);
+
+        public static final String HEADER_REQUEST_TIME = "requestTime";
+        void sendForProcessing(ServerRequest data,
+                               @Header(AmqpHeaders.EXPIRATION) String ttlInMs,
+                               @Header(HEADER_REQUEST_TIME) long now);
     }
 
     @Bean
