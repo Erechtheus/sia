@@ -12,6 +12,14 @@ Annotations for mutation mentions are generated using [SETH](https://github.com/
 > #### Note
 > The system uses RabbitMQ to load balance, so make sure it is running locally before starting the application, refer to [how to install RabbitMQ](https://www.rabbitmq.com/download.html) for help.
 
+> If you want to skip the rabbit mq installation, for convenience, you can just start it via maven (this might not work on your machine)
+
+>     ./mvnw rabbitmq:start
+
+> And issue the following to tear down rabbit mq
+
+>     ./mvnw rabbitmq:stop
+
 To start the system in development mode issue
 
     ./mvnw spring-boot:run
@@ -42,13 +50,19 @@ To extend SIA for additional Named Entity Recognition tools you have to:
 * Implement the Annotator [interface](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/annotator/Annotator.java)
 
 Check examples in the corresponding [package](https://github.com/Erechtheus/sia/tree/master/src/main/java/de/dfki/nlp/annotator). 
-For correct message routing, it is necessary to define input and output channel. Input channels can freely named, but the output channel requires the name "parsed". 
+For correct message routing, it is necessary to define the input and output channel. Input channels can be freely named, but the output channel requires the name "parsed".
 For example:
 
-    @Transformer(inputChannel = "yourAnnotator", outputChannel = "parsed")
+```java
+@Transformer(inputChannel = "yourAnnotator", outputChannel = "parsed")
+```
 
 * Add the your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L169-L171) and set the [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) accordingly. 
 
 For example:
 
-    .recipient("yourAnnotator", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).CHEMICAL)")
+```java
+.recipient("yourAnnotator", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).CHEMICAL)")
+```
+
+Here the `yourAnnotator` has to match the transformer `inputChannel` definition.
