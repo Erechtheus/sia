@@ -56,9 +56,9 @@ public class RestEndpoint {
                 Instant expirey = serverRequest.getParameters().getExpired().toInstant();
                 Duration duration = Duration.between(Instant.now(), expirey);
 
-                log.info("We have {} seconds to fulfill the request", duration.getSeconds());
+                log.info("We have {} seconds to fulfill the request [{}]", duration.getSeconds(), serverRequest.getParameters().getCommunication_id());
 
-                log.info("Request to analyze {} documents with types : {} from {} for id {} - with expiry date [{}]", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id(), serverRequest.getParameters().getExpired());
+                log.info("Request to analyze {} documents with types : {} from {} for id [{}] - with expiry date [{}]", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id(), serverRequest.getParameters().getExpired());
 
                 // calculate ttl - set it to 1 month ...
                 String ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));

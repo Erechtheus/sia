@@ -16,7 +16,7 @@ Annotations for mutation mentions are generated using [SETH](https://github.com/
 
 >     ./mvnw rabbitmq:start
 
-> And issue the following to tear down rabbit mq
+> And issue the following to tear down rabbit mq afterwards
 
 >     ./mvnw rabbitmq:stop
 

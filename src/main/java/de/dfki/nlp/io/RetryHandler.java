@@ -1,8 +1,14 @@
 package de.dfki.nlp.io;
 
+import com.google.common.base.Stopwatch;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
@@ -11,7 +17,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple Wrapper around RestTemplate, which retries to download documents, in case of failures.
@@ -24,6 +32,7 @@ public class RetryHandler {
 
     public RetryHandler(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+        restTemplate.getInterceptors().add(new PerfRequestSyncInterceptor());
     }
 
     @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(value = 1000, multiplier = 2, maxDelay = 60000))
@@ -77,6 +86,25 @@ public class RetryHandler {
     public <T> Optional<T> recoverPost(ResourceAccessException e, String urlpattern, Object request, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
         log.error("Failed to download after 10 tries {} ... continuing", e.getMessage());
         return Optional.empty();
+    }
+
+    /**
+     * Simple class that logs the time taken for a request.
+     */
+    @Slf4j
+    public static class PerfRequestSyncInterceptor implements ClientHttpRequestInterceptor {
+
+        @Override
+        public ClientHttpResponse intercept(HttpRequest hr, byte[] bytes, ClientHttpRequestExecution chre) throws IOException {
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            ClientHttpResponse response = chre.execute(hr, bytes);
+            stopwatch.stop();
+
+            log.info("corpus adapter performance: method={}, response_time={}, response_code={}, uri={}",
+                    hr.getMethod(), stopwatch.elapsed(TimeUnit.MILLISECONDS), response.getStatusCode().value(), StringUtils.abbreviate(hr.getURI().toString(), 70));
+
+            return response;
+        }
     }
 
 }

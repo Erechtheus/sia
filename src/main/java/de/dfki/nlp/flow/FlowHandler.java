@@ -198,7 +198,7 @@ public class FlowHandler {
                     .<Set<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
 
-                        log.info("Annotation request took {} ms", (System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME)));
+                        log.info("Annotation request took [{}] {} ms", headers.get("communication_id"), System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME));
 
                         parsed
                                 .stream()
