@@ -3,6 +3,7 @@ package de.dfki.nlp.annotator;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.integration.annotation.Transformer;
 import org.springframework.stereotype.Component;
 import seth.SETH;
@@ -18,6 +19,7 @@ import static de.dfki.nlp.domain.PredictionType.MUTATION;
 
 @Slf4j
 @Component
+@Profile("backend")
 public class SethAnnotator implements Annotator {
 
     private static final SETH SETH_DETECTOR = new SETH("resources/mutations.txt", true, true, false);

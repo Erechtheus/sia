@@ -89,7 +89,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.16.14</version>
+			<version>1.16.16</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -151,6 +151,12 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<profiles>
+						<!-- activate the backend by default -->
+						<profile>backend</profile>
+					</profiles>
+				</configuration>
 			</plugin>
 
 			<plugin>

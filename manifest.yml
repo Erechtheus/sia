@@ -3,6 +3,17 @@ applications:
   - name: seth-tips
     buildpack: https://github.com/cloudfoundry/java-buildpack.git
     path: target/sia-0.0.1-SNAPSHOT.jar
-    memory: 2048M
+    memory: 1G
+    services:
+    - rabbit
+  - name: sia-backend
+    buildpack: https://github.com/cloudfoundry/java-buildpack.git
+    path: target/sia-0.0.1-SNAPSHOT.jar
+    memory: 2G
+    no-route: true
+    health-check-type: process
+    env:
+        SPRING_PROFILES_ACTIVE: backend
+        SPRING.MAIN.WEB-ENVIRONMENT: false
     services:
     - rabbit

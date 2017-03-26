@@ -27,6 +27,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -67,6 +68,7 @@ import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.sta
 @Slf4j
 @Component
 @AllArgsConstructor
+@Profile("backend")
 public class FlowHandler {
 
     private final MultiDocumentFetcher documentFetcher;
