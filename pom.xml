@@ -162,7 +162,7 @@
 			<plugin>
 				<groupId>com.github.jkirsch</groupId>
 				<artifactId>rabbitmq-maven-plugin</artifactId>
-				<version>0.1.6</version>
+				<version>0.1.9</version>
 			</plugin>
 
 		</plugins>
