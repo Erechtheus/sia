@@ -1,10 +1,21 @@
-# Scalable Interchangable Annotation Server (SIA)
+# Scalable Interoperable Annotation Server (SIA)
 [![Build Status](https://travis-ci.org/Erechtheus/sia.svg?branch=master)](https://travis-ci.org/Erechtheus/sia)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Project description
 SIA is an annotation service according to the BioCreative V.5. BeCalm task [TIPS](http://www.becalm.eu/files/material/BioCreative.V.5_CFP.pdf).
 Annotations for mutation mentions are generated using [SETH](https://github.com/rockt/SETH), [mirNer](https://github.com/Erechtheus/mirNer), and diseases using a dictionary lookup. Results are returned in JSON according to these  [definitions](http://www.becalm.eu/files/schemas/jsonSchema.json). 
+
+## Citation
+To cite SIA, please use the following reference:
+
+@InProceedings{Kirschnick2017,
+  Title                    = {SIA: Scalable Interoperable Annotation Server},
+  Author                   = {Johannes Kirschnick and Philippe Thomas},
+  Booktitle                = {Proceedings of the BioCreative V.5 Challenge Evaluation Workshop.},
+  Year                     = {2017}
+}
+
 
 
 ## Getting Started
