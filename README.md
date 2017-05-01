@@ -8,14 +8,14 @@ Annotations for mutation mentions are generated using [SETH](https://github.com/
 
 ## Citation
 To cite SIA, please use the following reference:
-
+```bibtex
 @InProceedings{Kirschnick2017,
   Title                    = {SIA: Scalable Interoperable Annotation Server},
   Author                   = {Johannes Kirschnick and Philippe Thomas},
   Booktitle                = {Proceedings of the BioCreative V.5 Challenge Evaluation Workshop.},
   Year                     = {2017}
 }
-
+```
 
 
 ## Getting Started
@@ -25,11 +25,11 @@ To cite SIA, please use the following reference:
 
 > If you want to skip the rabbit mq installation, for convenience, you can just start it via maven (this might not work on your machine)
 
->     ./mvnw rabbitmq:start
+     ./mvnw rabbitmq:start
 
 > And issue the following to tear down rabbit mq afterwards
 
->     ./mvnw rabbitmq:stop
+     ./mvnw rabbitmq:stop
 
 To start the system in development mode issue
 
@@ -60,13 +60,15 @@ To extend SIA for additional Named Entity Recognition tools you have to:
 
 * Implement the Annotator [interface](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/annotator/Annotator.java)
 
-Check examples in the corresponding [package](https://github.com/Erechtheus/sia/tree/master/src/main/java/de/dfki/nlp/annotator). 
-For correct message routing, it is necessary to define the input and output channel. Input channels can be freely named, but the output channel requires the name "parsed".
+Consult the examples in the corresponding [package](https://github.com/Erechtheus/sia/tree/master/src/main/java/de/dfki/nlp/annotator) for implementation details. 
+Afterwards, for correct message routing, it is necessary to define the input and output channels. Input channels can be freely named, but the output channel requires the name **parsed**.
 For example:
 
 ```java
 @Transformer(inputChannel = "yourAnnotator", outputChannel = "parsed")
 ```
+
+This annotation placed on the annotator defines that inout are coming from the yourAnnotator channel and results of the method will be routed by the system to the _parsed_ channel. Inernally channels are mapped to queues automatically.
 
 * Add the your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L169-L171) and set the [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) accordingly. 
 
@@ -76,4 +78,4 @@ For example:
 .recipient("yourAnnotator", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).CHEMICAL)")
 ```
 
-Here the `yourAnnotator` has to match the transformer `inputChannel` definition.
+Here the `yourAnnotator` has to match the transformer `inputChannel` definition. And defines that all requests that need to be tagged with `CHEMICAL` will be send to the yourAnnotator channel. `headers['types'].contains` is a SPeL expression which can be used to evaluate scripts against message. In this case, checking if in the header a field called `types` contains the enum CHEMICAL.
