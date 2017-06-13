@@ -13,9 +13,12 @@ To cite SIA, please use the following reference:
   Title                    = {SIA: Scalable Interoperable Annotation Server},
   Author                   = {Johannes Kirschnick and Philippe Thomas},
   Booktitle                = {Proceedings of the BioCreative V.5 Challenge Evaluation Workshop.},
-  Year                     = {2017}
+  Year                     = {2017},
+  Address                  = {Barcelona, Spain},
+  Pages                    = {138--145}
 }
 ```
+A PDF version is freely available [here](http://www.biocreative.org/media/store/files/2017/BioCreative_V5_paper19.pdf)
 
 
 ## Getting Started
