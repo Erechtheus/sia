@@ -14,7 +14,6 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,10 +33,10 @@ public class PatentServerFetcher extends AbstractDocumentFetcher {
 
         try {
 
-            Optional<ParsedInputText[]> parsedInputText = retryHandler.retryablePost(annotatorConfig.patent.url, new MultiRequest(idList.getIds()), ParsedInputText[].class);
+            ParsedInputText[] parsedInputText = retryHandler.retryablePost(annotatorConfig.patent.url, new MultiRequest(idList.getIds()), ParsedInputText[].class);
 
-            if (parsedInputText.isPresent()) {
-                return Arrays.stream(parsedInputText.get()).collect(Collectors.toList());
+            if (parsedInputText != null) {
+                return Arrays.stream(parsedInputText).collect(Collectors.toList());
             }
 
             return Lists.newArrayList();

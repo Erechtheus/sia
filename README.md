@@ -26,11 +26,11 @@ A PDF version is freely available [here](http://www.biocreative.org/media/store/
 > #### Note
 > The system uses RabbitMQ to load balance, so make sure it is running locally before starting the application, refer to [how to install RabbitMQ](https://www.rabbitmq.com/download.html) for help.
 
-> If you want to skip the rabbit mq installation, for convenience, you can just start it via maven (this might not work on your machine)
+> If you want to skip the RabbitMQ installation, for convenience, you can just start it via maven (this might not work on your machine)
 
      ./mvnw rabbitmq:start
 
-> And issue the following to tear down rabbit mq afterwards
+> And issue the following to tear down RabbitMQ afterwards
 
      ./mvnw rabbitmq:stop
 

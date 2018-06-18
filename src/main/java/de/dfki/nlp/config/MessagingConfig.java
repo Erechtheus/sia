@@ -20,7 +20,7 @@ import org.springframework.messaging.handler.annotation.Header;
 @IntegrationComponentScan
 public class MessagingConfig {
 
-    final static String queueName = "input";
+    private final static String queueName = "input";
 
     @Bean
     Queue inputQueue() {
@@ -46,7 +46,7 @@ public class MessagingConfig {
     @MessagingGateway(defaultRequestChannel = "requestChannel")
     public interface ProcessingGateway {
 
-        public static final String HEADER_REQUEST_TIME = "requestTime";
+        String HEADER_REQUEST_TIME = "requestTime";
         void sendForProcessing(ServerRequest data,
                                @Header(AmqpHeaders.EXPIRATION) String ttlInMs,
                                @Header(HEADER_REQUEST_TIME) long now);
