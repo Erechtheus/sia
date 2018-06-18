@@ -8,6 +8,7 @@ import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.io.RetryHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,7 @@ public class DocumentFetcherTest {
     }
 
     @Test
+    @Ignore("The patent server has been shutdown")
     public void testPatent() throws Exception {
 
         ParsedInputText load = documentFetcher.load(new ServerRequest.Document("CA2073855C", "Patent Server"));

@@ -9,6 +9,7 @@ import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.io.RetryHandler;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = {GeneralConfig.class, CustomObjectMapper.class})
 @EnableConfigurationProperties(AnnotatorConfig.class)
+@Ignore("The abstract server has been shutdown")
 public class AbstractServerFetcherTest {
 
     @Autowired

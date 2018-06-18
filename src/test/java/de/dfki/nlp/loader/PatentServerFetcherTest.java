@@ -7,6 +7,7 @@ import de.dfki.nlp.config.GeneralConfig;
 import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.io.RetryHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ public class PatentServerFetcherTest {
     RestTemplate restTemplate;
 
     @Test
+    @Ignore("The patent server has been shutdown")
     public void load() throws Exception {
 
 

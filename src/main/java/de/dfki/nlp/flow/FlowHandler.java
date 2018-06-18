@@ -34,17 +34,15 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
-import org.springframework.integration.dsl.Adapters;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.amqp.Amqp;
-import org.springframework.integration.dsl.core.MessageHandlerSpec;
-import org.springframework.integration.dsl.support.Function;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
-import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler;
+import org.springframework.integration.http.dsl.Http;
+import org.springframework.integration.http.dsl.HttpMessageHandlerSpec;
 import org.springframework.messaging.MessagingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
@@ -60,7 +58,11 @@ import org.springframework.web.client.UnknownHttpStatusCodeException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
@@ -125,20 +127,29 @@ public class FlowHandler {
 
 
     @Bean
-    IntegrationFlow flow(ConnectionFactory connectionFactory, Queue input, Jackson2JsonMessageConverter messageConverter, Environment environment) {
+    IntegrationFlow flow(ConnectionFactory connectionFactory,
+                         Queue input,
+                         Jackson2JsonMessageConverter messageConverter,
+                         Environment environment,
+                         AnnotatorConfig annotatorConfig,
+                         MultiDocumentFetcher documentFetcher) {
         IntegrationFlowBuilder flow =
                 IntegrationFlows
                         .from(
                                 Amqp.inboundAdapter(connectionFactory, input)
                                         // set concurrentConsumers - anything larger than 1 gives parallelism per annotator request
                                         // but not the number of requests
-                                        .concurrentConsumers(annotatorConfig.getConcurrentConsumer())
+                                        .configureContainer(conf -> {
+                                            conf
+                                                    .concurrentConsumers(annotatorConfig.getConcurrentConsumer())
+                                                    // if this fails ... forward to the error queue
+                                                    .defaultRequeueRejected(false);
+                                        })
                                         .messageConverter(messageConverter)
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
                                         // retry the complete message
-                                        // if this fails ... forward to the error queue
-                                        .defaultRequeueRejected(false)
-                                        .adviceChain(retryOperationsInterceptor())
+                                        //.retryTemplate(retryOperationsInterceptor())
+                                        //.adviceChain(retryOperationsInterceptor())
                                         .errorChannel("errorSendingResults.input")
                         )
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
@@ -192,7 +203,8 @@ public class FlowHandler {
                             String.format("Sending Results [%s] after %d ms %s", objectMessage.getHeaders().get("communication_id"), (System.currentTimeMillis() - (long) objectMessage.getHeaders().get(ProcessingGateway.HEADER_REQUEST_TIME)), objectMessage.getHeaders().toString()))
                     //"respone", "headers['communication_id']")
                     // use retry advice - which tries to resend in case of failure
-                    .handleWithAdapter(sendToBecalmServer(), e -> e.advice(retryAdvice()));
+                    //.handle(sendToBecalmServer()));
+                    .handle(sendToBecalmServer(), e -> e.advice(retryAdvice()));
 
         } else {
             // for local deployment, just log
@@ -255,30 +267,27 @@ public class FlowHandler {
         return advice;
     }
 
-
     /**
      * Handles the BECALM post requests.
      *
      * @return the configured HTTP adapter
      */
-    private Function<Adapters, MessageHandlerSpec<?, HttpRequestExecutingMessageHandler>> sendToBecalmServer() {
-        return adapters -> {
-            RestTemplate restTemplate = new RestTemplate();
-            // we need to use a custom interceptor to allow multiple reading of the respons body
-            // once to check if we have an error, a second time to see the results (if there was no error)
-            restTemplate.getInterceptors().add(new BufferingClientHttpResponseWrapper());
-            restTemplate.setErrorHandler(errorHandler());
+    private HttpMessageHandlerSpec sendToBecalmServer() {
 
-            return adapters
-                    // where to send the results to
-                    .http(annotatorConfig.becalmSaveAnnotationLocation, restTemplate)
-                    // use the post method
-                    .httpMethod(HttpMethod.POST)
-                    // replace URI placeholders using variables
-                    .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
-                    .uriVariable("communicationId", "headers['communication_id']")
-                    .expectedResponseType(ServerResponse.class);
-        };
+        RestTemplate restTemplate = new RestTemplate();
+        // we need to use a custom interceptor to allow multiple reading of the respons body
+        // once to check if we have an error, a second time to see the results (if there was no error)
+        restTemplate.getInterceptors().add(new BufferingClientHttpResponseWrapper());
+        restTemplate.setErrorHandler(errorHandler());
+
+        return Http
+                .outboundGateway(annotatorConfig.becalmSaveAnnotationLocation, restTemplate)
+                // use the post method
+                .httpMethod(HttpMethod.POST)
+                // replace URI placeholders using variables
+                .uriVariable("apikey", "'" + annotatorConfig.apiKey + "'")
+                .uriVariable("communicationId", "headers['communication_id']")
+                .expectedResponseType(ServerResponse.class);
     }
 
 

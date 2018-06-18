@@ -15,10 +15,11 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.lang.reflect.Array;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,11 +55,11 @@ public class RetryHandler {
     }
 
     @Retryable(value = ResourceAccessException.class, maxAttempts = 10, backoff = @Backoff(value = 1000, multiplier = 2, maxDelay = 60000))
-    public <T> Optional<T> retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
+    public <T> T retryablePost(String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
 
         try {
 
-            return Optional.of(restTemplate.postForObject(urlpattern, request, responseType, uriVariables));
+            return restTemplate.postForObject(urlpattern, request, responseType, uriVariables);
 
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode() != HttpStatus.NOT_FOUND) {
@@ -70,22 +71,23 @@ public class RetryHandler {
         }
 
         // return empty
-        return Optional.empty();
+        return null;
 
     }
 
-    // handle 404
-
+    // handle 404's ...
     @Recover
-    public <T> T recoverGet(ResourceAccessException e, String urlpattern, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
+    public <T> T connectionException(RestClientException e, String urlpattern, Object request, Class<T> responseType, Object... uriVariables) {
         log.error("Failed to download after 10 tries {} ... continuing", e.getMessage());
-        return responseType.newInstance();
-    }
-
-    @Recover
-    public <T> Optional<T> recoverPost(ResourceAccessException e, String urlpattern, Object request, Class<T> responseType, Object... uriVariables) throws IllegalAccessException, InstantiationException {
-        log.error("Failed to download after 10 tries {} ... continuing", e.getMessage());
-        return Optional.empty();
+        try {
+            if (responseType.isArray()) {
+                return (T) Array.newInstance(responseType.getComponentType(), 0);
+            } else {
+                return responseType.newInstance();
+            }
+        } catch (Exception error) {
+            throw new IllegalStateException(error);
+        }
     }
 
     /**

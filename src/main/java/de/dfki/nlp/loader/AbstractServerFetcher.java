@@ -14,7 +14,6 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,10 +34,10 @@ public class AbstractServerFetcher extends AbstractDocumentFetcher {
 
         try {
 
-            Optional<ParsedInputText[]> parsedInputText = retryHandler.retryablePost(annotatorConfig.abstractserver.url, new MultiRequest(idList.getIds()), ParsedInputText[].class);
+            ParsedInputText[] parsedInputText = retryHandler.retryablePost(annotatorConfig.abstractserver.url, new MultiRequest(idList.getIds()), ParsedInputText[].class);
 
-            if (parsedInputText.isPresent()) {
-                return Arrays.stream(parsedInputText.get()).map(m -> {
+            if (parsedInputText != null) {
+                return Arrays.stream(parsedInputText).map(m -> {
                     // move text to abstract text
                     m.setAbstractText(m.getText());
                     m.setText(null);
