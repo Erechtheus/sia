@@ -52,6 +52,6 @@ public class BannerNERAnnotator implements Annotator {
     }
 
     private Stream<PredictionResult> detectBanner(String text, PredictionResult.Section section, String externalID) {
-        return bannerNERAnnotator.extractFromText(text).map(l -> new PredictionResult(externalID, section, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionType.GENE));
+        return bannerNERAnnotator.extractFromText(text).stream().map(l -> new PredictionResult(externalID, section, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionType.GENE));
     }
 }

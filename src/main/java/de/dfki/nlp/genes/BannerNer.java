@@ -5,7 +5,7 @@ import banner.BannerProperties;
 import banner.Sentence;
 import banner.processing.PostProcessor;
 import banner.tagging.CRFTagger;
-import banner.tagging.TaggedToken;
+import banner.tagging.Mention;
 import banner.tokenization.Tokenizer;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
@@ -20,21 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 @Slf4j
 public class BannerNer {
     private CRFTagger tagger;
     private Tokenizer tokenizer;
-
-    public static void main(String[] args) {
-        BannerNer ner = new BannerNer();
-        ner.extractFromText("In this abstract we describe our BRCA1 gene findings.");
-    }
-
 
     public BannerNer() {
         try {
@@ -64,22 +56,19 @@ public class BannerNer {
              }
              */
         } catch (Exception ex) {
-            System.out.println(ex);
+            throw new IllegalStateException("Can't init BannerNER", ex);
         }
     }
 
 
-    public Stream<GeneMention> extractFromText(String text) {
+    public List<Mention> extractFromText(String text) {
 
         Sentence sentence = new Sentence(text);
         tokenizer.tokenize(sentence);
         tagger.tag(sentence);
 
-        List<GeneMention> mentions = new ArrayList<>();
-        System.out.println(sentence.getTrainingText(TaggedToken.TagFormat.IOB)); //TODO do the parsing here
-
-        return mentions.stream();
-
+        // TODO translate token offsets into char offsets
+        return sentence.getMentions();
     }
 
 
