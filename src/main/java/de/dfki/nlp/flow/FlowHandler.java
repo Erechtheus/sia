@@ -182,6 +182,7 @@ public class FlowHandler {
                                         .recipient("mirner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MIRNA)")
                                         .recipient("seth", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MUTATION)")
                                         .recipient("diseases", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
+                                        .recipient("banner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).GENE)")
                         )
                         .channel("parsed")
                         .aggregate() // this aggregates annotations per document (from router)

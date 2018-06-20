@@ -74,6 +74,11 @@ public class MessagingConfig {
     }
 
     @Bean
+    public MessageChannel banner() {
+        return new DirectChannel();
+    }
+
+    @Bean
     public MessageChannel parsed() {
         return new DirectChannel();
     }

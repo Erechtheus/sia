@@ -140,6 +140,27 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>com.github.clulab</groupId>
+			<artifactId>reach-banner</artifactId>
+			<version>master</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.clulab</groupId>
+			<artifactId>reach-banner</artifactId>
+			<version>master</version>
+			<classifier>dragontool</classifier>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.clulab</groupId>
+			<artifactId>reach-banner</artifactId>
+			<version>master</version>
+			<classifier>heptag</classifier>
+		</dependency>
+
+
 		<!--<dependency>-->
 			<!--<groupId>org.springframework.boot</groupId>-->
 			<!--<artifactId>spring-boot-starter-security</artifactId>-->

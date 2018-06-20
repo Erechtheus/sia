@@ -15,7 +15,11 @@ import org.springframework.retry.annotation.EnableRetry;
 import java.time.Instant;
 import java.util.Date;
 
-import static de.dfki.nlp.domain.PredictionType.*;
+import static de.dfki.nlp.domain.PredictionType.CHEMICAL;
+import static de.dfki.nlp.domain.PredictionType.DISEASE;
+import static de.dfki.nlp.domain.PredictionType.GENE;
+import static de.dfki.nlp.domain.PredictionType.MIRNA;
+import static de.dfki.nlp.domain.PredictionType.MUTATION;
 
 @SpringBootApplication
 @Slf4j
@@ -56,7 +60,7 @@ public class SiaMainApplication {
             parameters.setExpired(Date.from(Instant.now().plusSeconds(60)));
 
             parameters.setCommunication_id(-1);
-            parameters.setTypes(Lists.newArrayList(DISEASE, MIRNA, MUTATION, CHEMICAL));
+            parameters.setTypes(Lists.newArrayList(DISEASE, MIRNA, MUTATION, CHEMICAL, GENE));
             // TODO re-enable
             //parameters.setExpired(Date.from(ZonedDateTime.now(ZoneId.of("Europe/Berlin")).plusMinutes(30).toInstant()));
             message.setParameters(parameters);
