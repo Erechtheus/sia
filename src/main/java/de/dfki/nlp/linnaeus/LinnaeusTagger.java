@@ -30,10 +30,6 @@ public class LinnaeusTagger {
     public static final String DOWNLOAD_LOCATION = "https://sourceforge.net/projects/linnaeus/files/Entity_packs/species-1.3.tgz/download";
     private final Matcher matcher;
 
-    public static void main(String[] args) {
-        LinnaeusTagger linnaeusTagger = new LinnaeusTagger();
-    }
-
     public LinnaeusTagger() {
         try {
             this.downloadAndUnzipFiles();
@@ -54,14 +50,6 @@ public class LinnaeusTagger {
 
 
         matcher = EntityTagger.getMatcher(new ArgParser(args.split(" ")), Logger.getLogger(this.getClass().getCanonicalName()));
-
-        String text = "The abilities of LHRH and a potent LHRH agonist ([D-Ser-(But),6, " +
-                "des-Gly-NH210]LHRH ethylamide) inhibit FSH responses by rat " +
-                "granulosa cells and Sertoli cells in vitro have been compared.";
-
-        List<Mention> match = matcher.match(text);
-
-        System.out.println(match);
 
     }
 
