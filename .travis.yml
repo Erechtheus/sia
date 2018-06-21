@@ -9,6 +9,7 @@ jdk:
 cache:
   directories:
   - $HOME/.m2
+  - linnaeus-data
 
 services:
   - rabbitmq
