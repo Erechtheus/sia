@@ -192,6 +192,7 @@
 						<!-- activate the backend by default -->
 						<profile>backend</profile>
 					</profiles>
+					<includeSystemScope>true</includeSystemScope>
 				</configuration>
 			</plugin>
 

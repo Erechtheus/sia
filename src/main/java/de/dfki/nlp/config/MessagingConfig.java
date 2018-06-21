@@ -79,6 +79,11 @@ public class MessagingConfig {
     }
 
     @Bean
+    public MessageChannel linnaeus() {
+        return new DirectChannel();
+    }
+
+    @Bean
     public MessageChannel parsed() {
         return new DirectChannel();
     }
