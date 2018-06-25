@@ -28,7 +28,12 @@ import static org.assertj.core.api.Assertions.assertThat;
         MultiDocumentFetcher.class,
         ObjectMapper.class,
         RetryHandler.class,
-        PubMedDocumentFetcher.class, AbstractServerFetcher.class, PMCDocumentFetcher.class, PatentServerFetcher.class})
+        PubMedDocumentFetcher.class,
+        AbstractServerFetcher.class,
+        PMCDocumentFetcher.class,
+        PatentServerFetcher.class,
+        PubMedFileLoader.class
+})
 @EnableConfigurationProperties(AnnotatorConfig.class)
 public class DocumentFetcherTest {
 

@@ -10,6 +10,7 @@ import banner.types.SentenceWithOffset;
 import banner.util.RankedList;
 import banner.util.SentenceBreaker;
 import com.google.common.io.Resources;
+import de.dfki.nlp.domain.PredictionResult;
 import dnorm.core.DiseaseNameAnalyzer;
 import dnorm.core.Lexicon;
 import dnorm.core.MEDICLexiconLoader;
@@ -82,14 +83,10 @@ public class DNorm {
 
     }
 
-    public void parse(String input) {
+    public List<PredictionResult> parse(String input) {
         List<Sentence> inputSentences = getNextSentenceList(input);
         List<Sentence> outputSentences = processSentences_BANNER(inputSentences);
-        try {
-            output(outputSentences);
-        } catch (IOException e) {
-            log.error("Error parsing", e);
-        }
+        return output(outputSentences);
     }
 
 
@@ -111,31 +108,28 @@ public class DNorm {
         return currentSentences;
     }
 
-    private static void output(List<Sentence> outputSentences) throws IOException {
-        for (int index = 0; index < outputSentences.size(); index++) {
-            Sentence outputSentence = outputSentences.get(index);
-            String documentId = outputSentence.getDocumentId();
-
+    private static List<PredictionResult> output(List<Sentence> outputSentences) {
+        List<PredictionResult> predictionResults = new ArrayList<>();
+        for (Sentence outputSentence : outputSentences) {
             int offset = ((SentenceWithOffset) outputSentence).getOffset();
             for (Mention mention : outputSentence.getMentions()) {
-                StringBuilder outputLine = new StringBuilder();
-                outputLine.append(documentId);
-                outputLine.append("\t");
-                outputLine.append(mention.getStartChar() + offset);
-                outputLine.append("\t");
-                outputLine.append(mention.getEndChar() + offset);
-                outputLine.append("\t");
-                outputLine.append(mention.getText());
-                outputLine.append("\t");
-                if (mention.getConceptId() != null)
-                    outputLine.append(mention.getConceptId());
 
-                System.out.println(outputLine.toString());
+                PredictionResult predictionResult = new PredictionResult();
+
+                predictionResult.setAnnotatedText(mention.getText());
+                predictionResult.setDatabaseId(mention.getConceptId());
+                predictionResult.setInit(mention.getStartChar() + offset);
+                predictionResult.setEnd(mention.getEndChar() + offset);
+
+                predictionResults.add(predictionResult);
+
             }
         }
+
+        return predictionResults;
     }
 
-    public List<Sentence> processSentences_BANNER(List<Sentence> inputSentences) {
+    private List<Sentence> processSentences_BANNER(List<Sentence> inputSentences) {
         // TODO Refactor this into separate NER and normalization methods
         List<Sentence> outputSentences = new ArrayList<Sentence>(inputSentences.size());
         for (Sentence inputSentence : inputSentences) {
@@ -184,7 +178,7 @@ public class DNorm {
             log.info("Downloading from {}", DOWNLOAD_LOCATION);
             unpackArchive(new URL(DOWNLOAD_LOCATION), targetFile, location);
         } else {
-            log.info("Reusing linnaeus-data from {}", location.getAbsolutePath());
+            log.info("Reusing dnorm-data from {}", location.getAbsolutePath());
         }
     }
 

@@ -41,6 +41,7 @@ public class PubMedFileLoader extends AbstractDocumentFetcher {
         return idList.getIds().stream().map(map::get).map(p -> {
             p.setAbstractText(StringUtils.trimToNull(p.getAbstractText()));
             p.setTitle(StringUtils.trimToNull(p.getTitle()));
+            p.setText(StringUtils.trimToNull(p.getText()));
             return p;
         }).collect(Collectors.toList());
     }

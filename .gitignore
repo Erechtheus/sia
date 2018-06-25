@@ -25,3 +25,4 @@ nbdist/
 /linnaeus-data/
 /tools/pubmedcache/*.gz
 /tools/dnorm/dnorm-data/
+/tools/chemspot/chemspot-data/

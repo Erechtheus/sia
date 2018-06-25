@@ -194,6 +194,7 @@ public class FlowHandler {
                                         .recipient("mirner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MIRNA)")
                                         .recipient("seth", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MUTATION)")
                                         .recipient("diseases", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
+                                        //.recipient("dnorm", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
                                         .recipient("banner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).GENE)")
                                         .recipient("linnaeus", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).ORGANISM)")
                         )
@@ -277,6 +278,7 @@ public class FlowHandler {
         ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
         backOffPolicy.setInitialInterval(1000);
         backOffPolicy.setMultiplier(2);
+        backOffPolicy.setMaxInterval(60000);
         backOffPolicy.setMaxInterval(60000);
         retryTemplate.setBackOffPolicy(backOffPolicy);
 

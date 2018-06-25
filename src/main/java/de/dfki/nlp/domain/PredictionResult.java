@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +37,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
-public class PredictionResult {
+public class PredictionResult implements Serializable {
 
     /**
      * Document external ID

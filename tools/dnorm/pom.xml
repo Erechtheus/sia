@@ -23,8 +23,18 @@
     </properties>
 
     <dependencies>
-        <!--DNORM-->
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!--DNORM-->
         <dependency>
             <groupId>dnorm</groupId>
             <artifactId>dnorm</artifactId>
