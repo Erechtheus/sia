@@ -23,3 +23,5 @@ dist/
 nbdist/
 .nb-gradle/
 /linnaeus-data/
+/tools/pubmedcache/*.gz
+/tools/dnorm/dnorm-data/

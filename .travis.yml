@@ -6,6 +6,9 @@ language: java
 jdk:
   - oraclejdk8
 
+before_install:
+  - ./mvnw -f tools/dnorm/pom.xml -DskipTests compile
+
 cache:
   directories:
   - $HOME/.m2

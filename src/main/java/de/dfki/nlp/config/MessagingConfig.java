@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
+import org.springframework.integration.annotation.Gateway;
 import org.springframework.integration.annotation.IntegrationComponentScan;
 import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -20,11 +21,17 @@ import org.springframework.messaging.handler.annotation.Header;
 @IntegrationComponentScan
 public class MessagingConfig {
 
-    private final static String queueName = "input";
+    public final static String queueName = "input";
+    public final static String queueOutput = "results";
 
     @Bean
     Queue inputQueue() {
         return new Queue(queueName, true);
+    }
+
+    @Bean
+    Queue outputQueue() {
+        return new Queue(queueOutput, true);
     }
 
     @Bean
@@ -43,10 +50,20 @@ public class MessagingConfig {
         return new DirectChannel();
     }
 
-    @MessagingGateway(defaultRequestChannel = "requestChannel")
+    @Bean
+    public MessageChannel responseChannel() {
+        return new DirectChannel();
+    }
+
+    @MessagingGateway(
+            defaultRequestChannel = "requestChannel"
+    )
+
     public interface ProcessingGateway {
 
         String HEADER_REQUEST_TIME = "requestTime";
+
+        @Gateway(replyTimeout = Long.MAX_VALUE, requestTimeout = Long.MAX_VALUE)
         void sendForProcessing(ServerRequest data,
                                @Header(AmqpHeaders.EXPIRATION) String ttlInMs,
                                @Header(HEADER_REQUEST_TIME) long now);
@@ -56,7 +73,6 @@ public class MessagingConfig {
     public Jackson2JsonMessageConverter jackson2Converter() {
         return new Jackson2JsonMessageConverter();
     }
-
 
     @Bean
     public MessageChannel seth() {

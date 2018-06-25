@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+	<property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/log-${cf_instance_index:-0}.log}"/>
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+	<include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+
+	<springProfile name="!cloud">
+		<logger name="org.springframework.web.client" level="TRACE"/>
+		<logger name="org.springframework.retry" level="TRACE"/>
+
+		<logger name="de.dfki.nlp" level="TRACE"/>
+
+		<root level="INFO">
+			<appender-ref ref="FILE"/>
+			<appender-ref ref="CONSOLE"/>
+		</root>
+	</springProfile>
+
+
+	<springProfile name="cloud">
+
+		<!--<logger name="org.springframework.integration.http.outbound" level="TRACE"/>
+-->
+		<root level="INFO">
+			<appender-ref ref="FILE"/>
+			<appender-ref ref="CONSOLE"/>
+		</root>
+	</springProfile>
+
+
+</configuration>

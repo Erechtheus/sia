@@ -26,6 +26,9 @@ public class MultiDocumentFetcher extends AbstractDocumentFetcher {
     @Autowired
     AbstractServerFetcher abstractServerHandler;
 
+    @Autowired
+    PubMedFileLoader pubMedFileLoader;
+
     private static final List<ParsedInputText> emptyResultList = Lists.newArrayList(new ParsedInputText());
 
     @Override
@@ -36,6 +39,10 @@ public class MultiDocumentFetcher extends AbstractDocumentFetcher {
         switch (idList.getSource().toLowerCase(Locale.ENGLISH)) {
             case "pubmed":
                 parsedInputTexts = pubMedDocumentFetcher.load(idList);
+                break;
+
+            case "pubmed file":
+                parsedInputTexts = pubMedFileLoader.load(idList);
                 break;
 
             case "patent server":

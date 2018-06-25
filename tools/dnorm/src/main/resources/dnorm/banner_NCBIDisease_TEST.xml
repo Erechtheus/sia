@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<banner-configuration>
+  <banner>
+    <eval>
+      <datasetName>banner.eval.dataset.PubtatorDataset</datasetName>
+      <dataset>
+        <dataFilename>dnorm-data/DNorm-0.0.7/data/NCBI_disease/NCBI_disease/Corpus.txt</dataFilename>
+        <pmidsFilename>dnorm-data/DNorm-0.0.7/data/NCBI_disease/NCBI_disease/NCBI_corpus_test_PMIDs.txt</pmidsFilename>
+        <foldType>Disease</foldType>
+      </dataset>
+      <idInputFilename>dnorm-data/DNorm-0.0.7/output/ids.txt</idInputFilename>
+      <rawInputFilename>dnorm-data/DNorm-0.0.7/output/raw.txt</rawInputFilename>
+      <trainingInputFilename>dnorm-data/DNorm-0.0.7/output/training.txt</trainingInputFilename>
+      <outputFilename>dnorm-data/DNorm-0.0.7/output/output.txt</outputFilename>
+      <inContextAnalysisFilename>dnorm-data/DNorm-0.0.7/output/contextAnalysis.html</inContextAnalysisFilename>
+      <mentionFilename>dnorm-data/DNorm-0.0.7/output/mention.txt</mentionFilename>
+      <modelFilename>dnorm-data/DNorm-0.0.7/output/model_NCBIDisease_O1_TRAINDEV.bin</modelFilename>
+      <lemmatiserDataDirectory>dnorm-data/DNorm-0.0.7/nlpdata/lemmatiser</lemmatiserDataDirectory>
+      <posTaggerDataDirectory>dnorm-data/DNorm-0.0.7/nlpdata/tagger</posTaggerDataDirectory>
+      <posTagger>dragon.nlp.tool.HeppleTagger</posTagger>
+      <tokenizer>banner.tokenization.SimpleTokenizer</tokenizer>
+      <useParenthesisPostProcessing>true</useParenthesisPostProcessing>
+      <useLocalAbbreviationPostProcessing>true</useLocalAbbreviationPostProcessing>
+      <useNumericNormalization>true</useNumericNormalization>
+      <tagFormat>IOB</tagFormat>
+      <crfOrder>1</crfOrder>
+      <textDirection>Forward</textDirection>
+      <mentionTypes>Required</mentionTypes>
+      <sameTypeOverlapOption>Union</sameTypeOverlapOption>
+      <differentTypeOverlapOption>Exception</differentTypeOverlapOption>
+    </eval>
+  </banner>
+</banner-configuration>

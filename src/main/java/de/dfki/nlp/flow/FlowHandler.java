@@ -10,6 +10,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimaps;
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
+import de.dfki.nlp.domain.AnnotationResponse;
 import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.exceptions.Errors;
@@ -26,6 +27,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -125,10 +127,18 @@ public class FlowHandler {
                 .recoverer(new RejectAndDontRequeueRecoverer()).build();
     }
 
+    @Bean IntegrationFlow resultHandler(ConnectionFactory connectionFactory) {
+        return IntegrationFlows
+                .from(Amqp.inboundAdapter(connectionFactory, "results"))
+                .<AnnotationResponse>handle(message -> {
+                    System.out.println("Done");
+                })
+                .get();
+    }
 
     @Bean
     IntegrationFlow flow(ConnectionFactory connectionFactory,
-                         Queue input,
+                         @Qualifier("inputQueue") Queue input,
                          Jackson2JsonMessageConverter messageConverter,
                          Environment environment,
                          AnnotatorConfig annotatorConfig,
@@ -136,7 +146,7 @@ public class FlowHandler {
         IntegrationFlowBuilder flow =
                 IntegrationFlows
                         .from(
-                                Amqp.inboundAdapter(connectionFactory, input)
+                                Amqp.inboundGateway(connectionFactory, input)
                                         // set concurrentConsumers - anything larger than 1 gives parallelism per annotator request
                                         // but not the number of requests
                                         .configureContainer(conf -> {
@@ -147,6 +157,8 @@ public class FlowHandler {
                                         })
                                         .messageConverter(messageConverter)
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
+                                        .replyTimeout(Long.MAX_VALUE)
+                                        .defaultReplyTo("results")
                                         // retry the complete message
                                         //.retryTemplate(retryOperationsInterceptor())
                                         //.adviceChain(retryOperationsInterceptor())
@@ -206,15 +218,20 @@ public class FlowHandler {
                     //"respone", "headers['communication_id']")
                     // use retry advice - which tries to resend in case of failure
                     //.handle(sendToBecalmServer()));
-                    .handle(sendToBecalmServer(), e -> e.advice(retryAdvice()));
+                    .handle(sendToBecalmServer(), e -> e.advice(retryAdvice()))
+                    .<Set<PredictionResult>>handle((m, headers) -> {
+                        long runtime = System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
+                        return new AnnotationResponse(m, runtime);
+                    });
 
         } else {
-            // for local deployment, just log
+            // for local deployments, just log
             flow
                     .<Set<PredictionResult>>handle((parsed, headers) -> {
                         log.info(headers.toString());
 
-                        log.info("Annotation request took [{}] {} ms", headers.get("communication_id"), System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME));
+                        long runtime = System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
+                        log.info("Annotation request took [{}] {} ms", headers.get("communication_id"), runtime);
 
                         parsed
                                 .stream()
@@ -226,7 +243,7 @@ public class FlowHandler {
                                         .result())
                                 .forEach(r -> log.info(r.toString()));
 
-                        return null;
+                        return new AnnotationResponse(parsed, runtime);
                     });
         }
 

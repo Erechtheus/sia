@@ -1,8 +1,10 @@
 package de.dfki.nlp;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.rest.ServerRequest;
-import de.dfki.nlp.rest.RestEndpoint;
+import de.dfki.nlp.loader.PubMedFileLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -13,7 +15,9 @@ import org.springframework.integration.config.EnableIntegration;
 import org.springframework.retry.annotation.EnableRetry;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import static de.dfki.nlp.domain.PredictionType.CHEMICAL;
 import static de.dfki.nlp.domain.PredictionType.DISEASE;
@@ -34,7 +38,8 @@ public class SiaMainApplication {
 
     @Bean
     @Profile("!cloud")
-    CommandLineRunner commandLineRunner(RestEndpoint endpoint) {
+    CommandLineRunner commandLineRunner(MessagingConfig.ProcessingGateway processGateway,
+                                        PubMedFileLoader pubMedFileLoader) {
 
         // this sends a test message when the cloud profile is not active
 
@@ -53,7 +58,8 @@ public class SiaMainApplication {
 
                     new ServerRequest.Document("10022392", "PUBMED"),
                     new ServerRequest.Document("10022392", "ABSTRACT SERVER"),
-                    new ServerRequest.Document("1422080", "ABSTRACT SERVER")
+                    new ServerRequest.Document("1422080", "ABSTRACT SERVER"),
+                    new ServerRequest.Document("25210619", "PUBMED FILE")
 
                     )
             );
@@ -67,7 +73,21 @@ public class SiaMainApplication {
             message.setParameters(parameters);
             message.setMethod(ServerRequest.Method.getAnnotations);
             // send one test message
-            endpoint.getAnnotations(message);
+            String ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));
+
+            processGateway.sendForProcessing(message, ttlInMs, System.currentTimeMillis());
+
+            for (String key : Iterables.limit(pubMedFileLoader.map.keySet(), 1000)) {
+                message
+                        .getParameters()
+                        .setDocuments(
+                                Collections.singletonList(
+                                        new ServerRequest.Document(key, "PUBMED FILE")));
+
+                ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));
+                processGateway.sendForProcessing(message, ttlInMs, System.currentTimeMillis());
+            }
+
 
         };
 

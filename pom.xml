@@ -23,6 +23,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<spring.cloud.version>Finchley.RC2</spring.cloud.version>
+
+		<start-class>de.dfki.nlp.SiaMainApplication</start-class>
 	</properties>
 
 	<dependencies>
@@ -174,6 +176,19 @@
 			<version>1.15</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.mapdb</groupId>
+			<artifactId>mapdb</artifactId>
+			<version>3.0.7</version>
+		</dependency>
+
+
+		<!-- ChemSpot -->
+		<!--<dependency>-->
+			<!--<groupId>com.github.Erechtheus</groupId>-->
+			<!--<artifactId>ChemSpot</artifactId>-->
+			<!--<version>-SNAPSHOT</version>-->
+		<!--</dependency>-->
 
 		<!--<dependency>-->
 			<!--<groupId>org.springframework.boot</groupId>-->

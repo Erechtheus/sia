@@ -3,7 +3,6 @@ package de.dfki.nlp.genes;
 
 import banner.BannerProperties;
 import banner.Sentence;
-import banner.processing.PostProcessor;
 import banner.tagging.CRFTagger;
 import banner.tagging.Mention;
 import banner.tokenization.Tokenizer;
@@ -12,6 +11,7 @@ import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -31,33 +31,27 @@ public class BannerNer {
     public BannerNer() {
         try {
 
-            File directory = unpackResourceFiles();
-
             Properties bannerProperties = loadProperties("banner/banner.properties");
 
-            // patch location
-            bannerProperties.setProperty("lemmatiserDataDirectory", new File(directory, "banner/nlpdata/lemmatiser").toString());
-            bannerProperties.setProperty("posTaggerDataDirectory", new File(directory, "banner/nlpdata/tagger").toString());
+            Pair<File, BannerProperties> init = loadBanner(bannerProperties);
+            tokenizer = init.getRight().getTokenizer();
 
-            BannerProperties properties = BannerProperties.load(bannerProperties);
-            tokenizer = properties.getTokenizer();
-            tagger = CRFTagger.load(new File(directory, "banner/gene_model_v02.bin"), properties.getLemmatiser(), properties.getPosTagger());
-            PostProcessor postProcessor = properties.getPostProcessor();
+            tagger = CRFTagger.load(new File(init.getLeft(), "banner/gene_model_v02.bin"), init.getRight().getLemmatiser(), init.getRight().getPosTagger(), null);
 
-            /**
-             // For each sentence to be labeled
-             {
-             Sentence sentence = new Sentence("");
-             tokenizer.tokenize(sentence);
-             tagger.tag(sentence);
-             //            if (postProcessor != null)
-             //               postProcessor.postProcess(sentence2);
-             System.out.println(sentence.getTrainingText(properties.getTagFormat()));
-             }
-             */
         } catch (Exception ex) {
             throw new IllegalStateException("Can't init BannerNER", ex);
         }
+    }
+
+    public static Pair<File, BannerProperties> loadBanner(Properties bannerProperties) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+        File directory = unpackResourceFiles();
+
+        // patch location
+        bannerProperties.setProperty("lemmatiserDataDirectory", new File(directory, "banner/nlpdata/lemmatiser").toString());
+        bannerProperties.setProperty("posTaggerDataDirectory", new File(directory, "banner/nlpdata/tagger").toString());
+
+        return Pair.of(directory, BannerProperties.load(bannerProperties));
+
     }
 
 
@@ -72,7 +66,7 @@ public class BannerNer {
     }
 
 
-    public Properties loadProperties(String filename) {
+    public static Properties loadProperties(String filename) {
         URL url = Resources.getResource(filename);
         final Properties properties = new Properties();
 
@@ -85,7 +79,7 @@ public class BannerNer {
         return properties;
     }
 
-    private File unpackResourceFiles() throws IOException {
+    private static File unpackResourceFiles() throws IOException {
         File tempDir = Files.createTempDir();
         tempDir.deleteOnExit();
 

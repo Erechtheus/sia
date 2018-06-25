@@ -30,6 +30,22 @@ public class PubMedDocumentFetcher extends AbstractDocumentFetcher {
         this.retryHandler = retryHandler;
     }
 
+    public static ParsedInputText convert(PubmedArticle pubmedArticle) {
+        // get abstract and title
+        Abstract anAbstract = pubmedArticle.getMedlineCitation().getArticle().getAbstract();
+        String abstractText = null;
+        if (anAbstract != null) {
+            List<AbstractText> abstracts = anAbstract.getAbstractText();
+            abstractText = abstracts.stream().map(AbstractText::getvalue).collect(Collectors.joining("\n"));
+        }
+
+        final String id = pubmedArticle.getMedlineCitation().getPMID().getvalue();
+        String titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
+
+        return new ParsedInputText(id, titleText, abstractText, null);
+
+    }
+
     @Override
     List<ParsedInputText> load(IdList idList) {
 
@@ -49,22 +65,17 @@ public class PubMedDocumentFetcher extends AbstractDocumentFetcher {
                     if (entry instanceof PubmedArticle) {
                         PubmedArticle pubmedArticle = (PubmedArticle) entry;
 
-                        // get abstract and title
-                        Abstract anAbstract = pubmedArticle.getMedlineCitation().getArticle().getAbstract();
-                        String abstractText = null;
-                        if (anAbstract != null) {
-                            List<AbstractText> abstracts = anAbstract.getAbstractText();
-                            abstractText = abstracts.stream().map(AbstractText::getvalue).collect(Collectors.joining("\n"));
-                        }
-
-                        final String id = pubmedArticle.getMedlineCitation().getPMID().getvalue();
+                        ParsedInputText parsedInputText = convert(pubmedArticle);
 
                         // match id with incoming
-                        Optional<String> matchedID = idList.getIds().stream().filter(givenId -> StringUtils.contains(givenId, id)).findFirst();
+                        Optional<String> matchedID = idList
+                                .getIds()
+                                .stream()
+                                .filter(givenId -> StringUtils.contains(givenId, parsedInputText.getExternalId()))
+                                .findFirst();
+                        matchedID.ifPresent(parsedInputText::setExternalId);
 
-                        String titleText = pubmedArticle.getMedlineCitation().getArticle().getArticleTitle().getvalue();
-
-                        return new ParsedInputText(matchedID.orElse(id), titleText, abstractText, null);
+                        return parsedInputText;
                     }
 
                     return null;
