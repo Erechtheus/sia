@@ -75,8 +75,9 @@ public class SiaMainApplication {
             // send one test message
             String ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));
 
-            //processGateway.sendForProcessing(message, ttlInMs, System.currentTimeMillis());
+            processGateway.sendForProcessing(message, ttlInMs, System.currentTimeMillis());
 
+            if (pubMedFileLoader.map == null) return;
             for (String key : Iterables.limit(pubMedFileLoader.map.keySet(), 2)) {
                 message
                         .getParameters()

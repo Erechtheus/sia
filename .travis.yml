@@ -8,6 +8,7 @@ jdk:
 
 before_install:
   - ./mvnw -f tools/dnorm/pom.xml -DskipTests compile
+  - ./mvnw -f tools/chemspot/pom.xml -DskipTests compile
 
 cache:
   directories:
