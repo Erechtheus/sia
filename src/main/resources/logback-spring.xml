@@ -10,7 +10,8 @@
 		<logger name="org.springframework.web.client" level="TRACE"/>
 		<logger name="org.springframework.retry" level="TRACE"/>
 
-		<logger name="de.dfki.nlp" level="TRACE"/>
+		<logger name="de.dfki.nlp" level="INFO"/>
+		<logger name="de.dfki.nlp.annotator" level="WARN"/>
 
 		<root level="INFO">
 			<appender-ref ref="FILE"/>

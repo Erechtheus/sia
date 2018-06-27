@@ -18,25 +18,25 @@ import java.util.Set;
 @Component
 @Slf4j
 @Profile("backend")
-@ConditionalOnProperty(prefix = "sia.annotators", name = "dnorm")
-public class DNormAnnotator implements Annotator {
+@ConditionalOnProperty(prefix = "sia.annotators", name = "chemspot")
+public class ChemSpotAnnotator implements Annotator {
 
     @Autowired
-    MessagingConfig.DNormGateway dNormGateway;
+    MessagingConfig.ChemSpotGateway chemSpotGateway;
 
     @Autowired
     ObjectMapper objectMapper;
 
     @Override
-    @Transformer(inputChannel = "dnorm")
+    @Transformer(inputChannel = "chemspot")
     public Set<PredictionResult> annotate(ParsedInputText payload) {
 
-        String result = dNormGateway.sendForProcessing(payload);
+        String result = chemSpotGateway.sendForProcessing(payload);
         try {
             return objectMapper.readValue(result, new TypeReference<Set<PredictionResult>>() {
             });
         } catch (IOException e) {
-            log.error("Can't read response from Dnorm Tagger", e);
+            log.error("Can't read response from Chemspot Tagger", e);
             return null;
         }
     }

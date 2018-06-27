@@ -4,15 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimaps;
 import de.dfki.nlp.config.AnnotatorConfig;
+import de.dfki.nlp.config.EnabledAnnotators;
+import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
 import de.dfki.nlp.domain.AnnotationResponse;
 import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.PredictionType;
 import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerResponse;
@@ -41,10 +43,14 @@ import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.dsl.Transformers;
+import org.springframework.integration.file.FileWritingMessageHandler;
+import org.springframework.integration.file.support.FileExistsMode;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.handler.advice.RequestHandlerRetryAdvice;
 import org.springframework.integration.http.dsl.Http;
 import org.springframework.integration.http.dsl.HttpMessageHandlerSpec;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessagingException;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
@@ -57,16 +63,25 @@ import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static de.dfki.nlp.domain.PredictionType.CHEMICAL;
+import static de.dfki.nlp.domain.PredictionType.DISEASE;
+import static de.dfki.nlp.domain.PredictionType.GENE;
+import static de.dfki.nlp.domain.PredictionType.MIRNA;
+import static de.dfki.nlp.domain.PredictionType.MUTATION;
+import static de.dfki.nlp.domain.PredictionType.ORGANISM;
 import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
 
 @Slf4j
@@ -127,13 +142,32 @@ public class FlowHandler {
                 .recoverer(new RejectAndDontRequeueRecoverer()).build();
     }
 
-    @Bean IntegrationFlow resultHandler(ConnectionFactory connectionFactory) {
+    @Bean
+    @Profile("driver")
+    IntegrationFlow resultHandler(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter messageConverter) {
+        FileWritingMessageHandler fileWritingMessageHandler = new FileWritingMessageHandler(new File("annotated"));
+
+        String filename = new SimpleDateFormat("'annotation-results_'yyyy-MM-dd_hh-mm-ss'.json'").format(new Date());
+
+        fileWritingMessageHandler.setFileExistsMode(FileExistsMode.APPEND);
+        fileWritingMessageHandler.setAppendNewLine(true);
+        fileWritingMessageHandler.setFileNameGenerator(message -> filename);
+        fileWritingMessageHandler.setExpectReply(false);
+
         return IntegrationFlows
-                .from(Amqp.inboundAdapter(connectionFactory, "results"))
-                .<AnnotationResponse>handle(message -> {
-                    System.out.println("Done");
-                })
+                .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput).messageConverter(messageConverter))
+                // we might want to print only viable results, ut for performance analysis, the complete results
+                // are nice to have, as they have timestamps
+                .filter(AnnotationResponse.class, source -> source.getPredictionResults().size() > 0)
+                .transform(Transformers.toJson())
+                .handle(fileWritingMessageHandler)
                 .get();
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean headerContains(Message<?> message, PredictionType predictionType) {
+        List<PredictionType> types = (List<PredictionType>) message.getHeaders().get("types");
+        return types.contains(predictionType);
     }
 
     @Bean
@@ -142,13 +176,14 @@ public class FlowHandler {
                          Jackson2JsonMessageConverter messageConverter,
                          Environment environment,
                          AnnotatorConfig annotatorConfig,
-                         MultiDocumentFetcher documentFetcher) {
+                         MultiDocumentFetcher documentFetcher,
+                         EnabledAnnotators enabledAnnotators) {
         IntegrationFlowBuilder flow =
                 IntegrationFlows
                         .from(
                                 Amqp.inboundGateway(connectionFactory, input)
                                         // set concurrentConsumers - anything larger than 1 gives parallelism per annotator request
-                                        // but not the number of requests
+                                        // but not of the number of requests
                                         .configureContainer(conf -> {
                                             conf
                                                     .concurrentConsumers(annotatorConfig.getConcurrentConsumer())
@@ -164,8 +199,11 @@ public class FlowHandler {
                                         //.adviceChain(retryOperationsInterceptor())
                                         .errorChannel("errorSendingResults.input")
                         )
+                        .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("timeTakenFromQueue", "T(System).currentTimeMillis()"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("communication_id", "payload.parameters.communication_id"))
                         .enrichHeaders(headerEnricherSpec -> headerEnricherSpec.headerExpression("types", "payload.parameters.types"))
+
+                        // if we have the entire data we don't need to download, otherwise we have to
                         .split(ServerRequest.class, serverRequest -> {
                                     // partition the input
                                     ImmutableListMultimap<String, ServerRequest.Document> index = Multimaps.index(serverRequest.getParameters()
@@ -176,7 +214,7 @@ public class FlowHandler {
                                     // now split into X at most per source
                                     for (Map.Entry<String, Collection<ServerRequest.Document>> entry : index.asMap().entrySet()) {
                                         for (List<ServerRequest.Document> documentList : Iterables.partition(entry.getValue(), annotatorConfig.getRequestBulkSize())) {
-                                            idLists.add(new IdList(entry.getKey(), documentList.stream().map(ServerRequest.Document::getDocument_id).collect(Collectors.toList())));
+                                            idLists.add(new IdList(entry.getKey(), documentList));
                                         }
                                     }
 
@@ -188,23 +226,18 @@ public class FlowHandler {
                         .transform(IdList.class, documentFetcher::load)
                         .split()
                         .channel("annotate")
-                        .routeToRecipients(r ->
-                                r.applySequence(true)
-                                        .defaultOutputToParentFlow()
-                                        .recipient("mirner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MIRNA)")
-                                        .recipient("seth", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).MUTATION)")
-                                        .recipient("diseases", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
-                                        //.recipient("dnorm", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).DISEASE)")
-                                        .recipient("banner", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).GENE)")
-                                        .recipient("linnaeus", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).ORGANISM)")
-                        )
-                        .channel("parsed")
-                        .aggregate() // this aggregates annotations per document (from router)
+                        .scatterGather(r -> r.applySequence(true)
+                                .defaultOutputToParentFlow()
+                                .recipientMessageSelector("mirNer", message -> headerContains(message, MIRNA) && enabledAnnotators.mirNer)
+                                .recipientMessageSelector("seth", message -> headerContains(message, MUTATION) && enabledAnnotators.seth)
+                                .recipientMessageSelector("diseaseNer", message -> headerContains(message, DISEASE) && enabledAnnotators.diseaseNer)
+                                .recipientMessageSelector("dnorm", message -> headerContains(message, DISEASE) && enabledAnnotators.dnorm)
+                                .recipientMessageSelector("banner", message -> headerContains(message, GENE) && enabledAnnotators.banner)
+                                .recipientMessageSelector("linnaeus", message -> headerContains(message, ORGANISM) && enabledAnnotators.linnaeus)
+                                .recipientMessageSelector("chemspot", message -> headerContains(message, CHEMICAL) && enabledAnnotators.chemspot))
                         .<List<Set<PredictionResult>>, Set<PredictionResult>>transform(s -> s.stream().flatMap(Collection::stream).collect(Collectors.toSet()))
-                        .channel("aggregate")
                         .aggregate() // this aggregates all document per source group
                         .aggregate() // this aggregates all documents
-                        // now merge the results by flattening
                         .channel("jointogether")
                         .<List<List<Set<PredictionResult>>>, Set<PredictionResult>>transform(source ->
                                 source.stream().flatMap(Collection::stream).flatMap(Collection::stream).collect(Collectors.toSet()));
@@ -221,20 +254,26 @@ public class FlowHandler {
                     //.handle(sendToBecalmServer()));
                     .handle(sendToBecalmServer(), e -> e.advice(retryAdvice()))
                     .<Set<PredictionResult>>handle((m, headers) -> {
-                        long runtime = System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
-                        return new AnnotationResponse(m, runtime);
+                        long now = System.currentTimeMillis();
+                        long runtime = now - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
+                        long parseTime = now - (long) headers.get("timeTakenFromQueue");
+                        return new AnnotationResponse(m, runtime, parseTime);
                     });
 
         } else {
             // for local deployments, just log
             flow
                     .<Set<PredictionResult>>handle((parsed, headers) -> {
-                        log.info(headers.toString());
+                        //log.info(headers.toString());
 
-                        long runtime = System.currentTimeMillis() - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
-                        log.info("Annotation request took [{}] {} ms", headers.get("communication_id"), runtime);
+                        long now = System.currentTimeMillis();
+                        long runtime = now - (long) headers.get(ProcessingGateway.HEADER_REQUEST_TIME);
+                        long parseTime = now - (long) headers.get("timeTakenFromQueue");
+                        log.debug("Annotation request took [{}] {} ms (parsing {} ms)",
+                                headers.get("communication_id"),
+                                runtime, parseTime);
 
-                        parsed
+/*                        parsed
                                 .stream()
                                 .sorted((o1, o2) -> ComparisonChain
                                         .start()
@@ -242,9 +281,9 @@ public class FlowHandler {
                                         .compare(o1.getSection().name(), o2.getSection().name())
                                         .compare(o1.getInit(), o2.getInit())
                                         .result())
-                                .forEach(r -> log.info(r.toString()));
+                                .forEach(r -> log.info(r.toString()));*/
 
-                        return new AnnotationResponse(parsed, runtime);
+                        return new AnnotationResponse(parsed, runtime, parseTime);
                     });
         }
 

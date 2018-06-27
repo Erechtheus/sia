@@ -3,6 +3,7 @@ package de.dfki.nlp.annotator;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.integration.annotation.Transformer;
 import org.springframework.stereotype.Component;
@@ -20,11 +21,12 @@ import static de.dfki.nlp.domain.PredictionType.MUTATION;
 @Slf4j
 @Component
 @Profile("backend")
+@ConditionalOnProperty(prefix = "sia.annotators", name = "seth")
 public class SethAnnotator implements Annotator {
 
     private static final SETH SETH_DETECTOR = new SETH("resources/mutations.txt", true, true, false);
 
-    @Transformer(inputChannel = "seth", outputChannel = "parsed")
+    @Transformer(inputChannel = "seth")
     public Set<PredictionResult> annotate(ParsedInputText payload) {
 
         if (payload.getExternalId() == null) return Collections.emptySet();

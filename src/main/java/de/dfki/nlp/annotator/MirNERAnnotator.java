@@ -5,6 +5,7 @@ import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.integration.annotation.Transformer;
 import org.springframework.stereotype.Component;
@@ -20,13 +21,14 @@ import static de.dfki.nlp.domain.PredictionResult.Section.T;
 @Component
 @Slf4j
 @Profile("backend")
+@ConditionalOnProperty(prefix = "sia.annotators", name = "mirNer")
 public class MirNERAnnotator implements Annotator {
 
     private static final MirNer mirNer = new MirNer();
 
 
     @Override
-    @Transformer(inputChannel = "mirner", outputChannel = "parsed")
+    @Transformer(inputChannel = "mirNer")
     public Set<PredictionResult> annotate(ParsedInputText payload) {
         if (payload.getExternalId() == null) return Collections.emptySet();
 

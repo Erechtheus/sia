@@ -1,6 +1,7 @@
 package de.dfki.nlp.rest;
 
 import com.rabbitmq.client.ConnectionFactory;
+import de.dfki.nlp.SiaMainApplication;
 import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.exceptions.Errors;
 import de.dfki.nlp.domain.rest.Response;
@@ -24,7 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        classes = SiaMainApplication.class)
 public class RestEndpointTest {
 
     @Autowired

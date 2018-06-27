@@ -84,6 +84,11 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-file</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>21.0</version>
@@ -176,20 +181,6 @@
 			<version>1.15</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.mapdb</groupId>
-			<artifactId>mapdb</artifactId>
-			<version>3.0.7</version>
-		</dependency>
-
-
-		<!-- ChemSpot -->
-		<!--<dependency>-->
-			<!--<groupId>com.github.Erechtheus</groupId>-->
-			<!--<artifactId>ChemSpot</artifactId>-->
-			<!--<version>-SNAPSHOT</version>-->
-		<!--</dependency>-->
-
 		<!--<dependency>-->
 			<!--<groupId>org.springframework.boot</groupId>-->
 			<!--<artifactId>spring-boot-starter-security</artifactId>-->
@@ -215,6 +206,34 @@
 				<groupId>com.github.jkirsch</groupId>
 				<artifactId>rabbitmq-maven-plugin</artifactId>
 				<version>0.1.9</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<id>SiaPubmedAnnotator</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<executable>java</executable>
+					<arguments>
+						<argument>-classpath</argument>
+						<classpath/>
+						<argument>de.dfki.nlp.SiaPubmedAnnotator</argument>
+					</arguments>
+					<systemProperties>
+						<systemProperty>
+							<key>SPRING_PROFILES_ACTIVE</key>
+							<value>backend</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
 			</plugin>
 
 		</plugins>

@@ -5,6 +5,8 @@ import de.dfki.nlp.domain.PredictionType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import javax.validation.constraints.NotEmpty;
@@ -36,12 +38,21 @@ public class ServerRequest {
     }
 
     @Data
+    @ToString
     @NoArgsConstructor
     @AllArgsConstructor
-    @ToString
+    @RequiredArgsConstructor
     public static class Document {
+
+        @NonNull
         String document_id;
+        @NonNull
         String source;
+
+        // we can also provide the text inline
+        String abstractText;
+        String title;
+        String text;
     }
 
     public enum Method {

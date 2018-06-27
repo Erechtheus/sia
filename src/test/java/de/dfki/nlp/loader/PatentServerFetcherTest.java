@@ -46,7 +46,7 @@ public class PatentServerFetcherTest {
                 "US20080038365", "WO2010032704A1", "WO2012005339A1"
         );
 
-        List<ParsedInputText> load = patentServerFetcher.load(new IdList("patent", idList));
+        List<ParsedInputText> load = patentServerFetcher.load(IdList.withIds("patent", idList));
 
         assertThat(load).hasSize(3).extracting("externalId").containsOnlyElementsOf(idList);
 

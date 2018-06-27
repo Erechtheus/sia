@@ -49,7 +49,7 @@ public class PubMedDocumentFetcherTest {
                 "22835028", "22290653"
         );
 
-        List<ParsedInputText> load = pubMedDocumentFetcher.load(new IdList("pubmed", idList));
+        List<ParsedInputText> load = pubMedDocumentFetcher.load(IdList.withIds("pubmed", idList));
 
         assertThat(load).hasSize(2).extracting("externalId").containsExactlyElementsOf(idList);
 

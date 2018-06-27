@@ -1,7 +1,6 @@
 package de.dfki.nlp.config;
 
 import de.dfki.nlp.domain.ParsedInputText;
-import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Queue;
@@ -11,7 +10,6 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.amqp.dsl.Amqp;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.annotation.Gateway;
@@ -19,14 +17,9 @@ import org.springframework.integration.annotation.IntegrationComponentScan;
 import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.Transformers;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.Header;
-
-import java.util.Set;
 
 @Configuration
 @IntegrationComponentScan
@@ -34,6 +27,7 @@ public class MessagingConfig {
 
     public final static String queueName = "input";
     public final static String queueNameDnorm = "dnorm";
+    public final static String queueNameChemspot = "chemspot";
     public final static String queueOutput = "results";
 
     @Bean
@@ -72,6 +66,16 @@ public class MessagingConfig {
         return outbound;
     }
 
+    @Bean
+    @ServiceActivator(inputChannel = "chemspotChannel")
+    public AmqpOutboundEndpoint chemspotOutbound(AmqpTemplate amqpTemplate) {
+        AmqpOutboundEndpoint outbound = new AmqpOutboundEndpoint(amqpTemplate);
+        outbound.setRoutingKey(queueNameChemspot); // default exchange - route to queue 'queuename'
+        outbound.setExpectReply(true);
+        outbound.setHeaderMapper(DefaultAmqpHeaderMapper.outboundMapper());
+        return outbound;
+    }
+
 
     @Bean
     public MessageChannel amqpOutboundChannel() {
@@ -105,18 +109,27 @@ public class MessagingConfig {
         String sendForProcessing(ParsedInputText data);
     }
 
+    @MessagingGateway(
+            defaultRequestChannel = "chemspotChannel"
+    )
+    public interface ChemSpotGateway {
+
+        @Gateway(replyTimeout = Long.MAX_VALUE, requestTimeout = Long.MAX_VALUE)
+        String sendForProcessing(ParsedInputText data);
+    }
+
     @Bean
     public MessageChannel seth() {
         return new DirectChannel();
     }
 
     @Bean
-    public MessageChannel mirner() {
+    public MessageChannel mirNer() {
         return new DirectChannel();
     }
 
     @Bean
-    public MessageChannel diseases() {
+    public MessageChannel diseaseNer() {
         return new DirectChannel();
     }
 
@@ -127,11 +140,6 @@ public class MessagingConfig {
 
     @Bean
     public MessageChannel linnaeus() {
-        return new DirectChannel();
-    }
-
-    @Bean
-    public MessageChannel parsed() {
         return new DirectChannel();
     }
 

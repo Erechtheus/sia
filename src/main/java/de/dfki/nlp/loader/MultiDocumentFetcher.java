@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -26,9 +27,6 @@ public class MultiDocumentFetcher extends AbstractDocumentFetcher {
     @Autowired
     AbstractServerFetcher abstractServerHandler;
 
-    @Autowired
-    PubMedFileLoader pubMedFileLoader;
-
     private static final List<ParsedInputText> emptyResultList = Lists.newArrayList(new ParsedInputText());
 
     @Override
@@ -41,10 +39,6 @@ public class MultiDocumentFetcher extends AbstractDocumentFetcher {
                 parsedInputTexts = pubMedDocumentFetcher.load(idList);
                 break;
 
-            case "pubmed file":
-                parsedInputTexts = pubMedFileLoader.load(idList);
-                break;
-
             case "patent server":
                 parsedInputTexts = patentServerHandler.load(idList);
                 break;
@@ -55,6 +49,13 @@ public class MultiDocumentFetcher extends AbstractDocumentFetcher {
 
             case "abstract server":
                 parsedInputTexts = abstractServerHandler.load(idList);
+                break;
+
+            case "inline":
+                parsedInputTexts = idList
+                        .getDocuments()
+                        .stream().map(d -> new ParsedInputText(d.getDocument_id(), d.getTitle(), d.getAbstractText(), d.getText()))
+                        .collect(Collectors.toList());
                 break;
 
             default:

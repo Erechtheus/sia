@@ -69,7 +69,7 @@ public class AbstractServerFetcherTest {
         StopWatch stopWatch = new StopWatch();
         for (int i = 1; i <= idList.size(); i++) {
 
-            IdList idListQuery = new IdList("abstract", idList.subList(0, i));
+            IdList idListQuery = IdList.withIds("abstract", idList.subList(0, i));
 
             // load multiple
             stopWatch.start("" + idListQuery.getIds().size());
@@ -94,7 +94,7 @@ public class AbstractServerFetcherTest {
         ParsedInputText abstractText = abstractServerHandler.load(new ServerRequest.Document("1422080", "a"));
         assertThat(abstractText).isEqualTo(new ParsedInputText());
 
-        List<ParsedInputText> inputTexts = abstractServerHandler.load(new IdList("a", Lists.newArrayList("1422080")));
+        List<ParsedInputText> inputTexts = abstractServerHandler.load(IdList.withIds("a", Lists.newArrayList("1422080")));
         assertThat(inputTexts).hasSize(0);
 
     }

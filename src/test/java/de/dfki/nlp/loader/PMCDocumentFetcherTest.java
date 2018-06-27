@@ -44,7 +44,7 @@ public class PMCDocumentFetcherTest {
 
         PMCDocumentFetcher pmcDocumentFetcher = new PMCDocumentFetcher(annotatorConfig, new RetryHandler(restTemplate));
 
-        List<ParsedInputText> load = pmcDocumentFetcher.load(new IdList("pmc", idList));
+        List<ParsedInputText> load = pmcDocumentFetcher.load(IdList.withIds("pmc", idList));
 
         assertThat(load).hasSize(idList.size()).extracting("externalId").containsExactlyElementsOf(idList);
 

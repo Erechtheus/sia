@@ -5,6 +5,7 @@ import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.PredictionResult;
 import de.dfki.nlp.domain.PredictionType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.integration.annotation.Transformer;
 import org.springframework.stereotype.Component;
@@ -20,12 +21,13 @@ import static de.dfki.nlp.domain.PredictionResult.Section.T;
 @Component
 @Slf4j
 @Profile("backend")
+@ConditionalOnProperty(prefix = "sia.annotators", name = "diseaseNer")
 public class DiseasesNERAnnotator implements Annotator {
 
     private static final DiseasesNer diseaseNer = new DiseasesNer();
 
     @Override
-    @Transformer(inputChannel = "diseases", outputChannel = "parsed")
+    @Transformer(inputChannel = "diseaseNer")
     public Set<PredictionResult> annotate(ParsedInputText payload) {
 
         if (payload.getExternalId() == null) return Collections.emptySet();

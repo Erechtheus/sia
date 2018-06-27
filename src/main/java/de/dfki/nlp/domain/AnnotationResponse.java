@@ -15,4 +15,5 @@ public class AnnotationResponse {
 
     Set<PredictionResult> predictionResults;
     long runtimeInMs;
+    long parseTimeInMs;
 }

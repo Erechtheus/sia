@@ -13,7 +13,7 @@ public abstract class AbstractDocumentFetcher {
     abstract List<ParsedInputText> load(IdList idList);
 
     public ParsedInputText load(ServerRequest.Document document) {
-        List<ParsedInputText> parsedInputTexts = load(new IdList(document.getSource(), Lists.newArrayList(document.getDocument_id())));
+        List<ParsedInputText> parsedInputTexts = load(new IdList(document.getSource(), Lists.newArrayList(document)));
         // default, when there is an error retrieving the document
         return Iterables.getFirst(parsedInputTexts, new ParsedInputText());
     }

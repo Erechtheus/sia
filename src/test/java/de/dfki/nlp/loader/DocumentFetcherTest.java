@@ -31,8 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         PubMedDocumentFetcher.class,
         AbstractServerFetcher.class,
         PMCDocumentFetcher.class,
-        PatentServerFetcher.class,
-        PubMedFileLoader.class
+        PatentServerFetcher.class
 })
 @EnableConfigurationProperties(AnnotatorConfig.class)
 public class DocumentFetcherTest {
@@ -99,7 +98,7 @@ public class DocumentFetcherTest {
 
         // now check multiple
         List<String> multipleId = Lists.newArrayList("BC1403855C", "20255", "20255");
-        List<ParsedInputText> multiple = documentFetcher.load(new IdList("PMC", multipleId));
+        List<ParsedInputText> multiple = documentFetcher.load(IdList.withIds("PMC", multipleId));
 
         assertThat(multiple).hasSize(3).extracting("externalId").containsExactlyElementsOf(multipleId);
 

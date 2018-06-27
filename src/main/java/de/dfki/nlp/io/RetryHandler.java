@@ -102,7 +102,7 @@ public class RetryHandler {
             ClientHttpResponse response = chre.execute(hr, bytes);
             stopwatch.stop();
 
-            log.info("corpus adapter performance: method={}, response_time={}, response_code={}, uri={}",
+            log.debug("corpus adapter performance: method={}, response_time={}, response_code={}, uri={}",
                     hr.getMethod(), stopwatch.elapsed(TimeUnit.MILLISECONDS), response.getStatusCode().value(), StringUtils.abbreviate(hr.getURI().toString(), 70));
 
             return response;
