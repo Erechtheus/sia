@@ -2,7 +2,6 @@ package de.dfki.nlp;
 
 import com.google.common.collect.Lists;
 import de.dfki.nlp.config.EnabledAnnotators;
-import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.ParsedInputText;
 import de.dfki.nlp.domain.pubmed.PubmedArticle;
 import de.dfki.nlp.domain.pubmed.PubmedArticleSet;
@@ -37,6 +36,11 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
+import static de.dfki.nlp.config.MessagingConfig.queueName;
+import static de.dfki.nlp.config.MessagingConfig.queueOutput;
+import static org.springframework.amqp.rabbit.core.RabbitAdmin.QUEUE_MESSAGE_COUNT;
+
 @SpringBootApplication
 @Slf4j
 @EnableIntegration
@@ -62,19 +66,20 @@ public class SiaPubmedAnnotator {
     public void reportCurrentTime() {
 
         // check length
-        Integer count = (Integer) amqpAdmin.getQueueProperties(MessagingConfig.queueName).get("QUEUE_MESSAGE_COUNT");
+        Integer countIn = (Integer) amqpAdmin.getQueueProperties(queueName).get(QUEUE_MESSAGE_COUNT);
+        Integer countOut = (Integer) amqpAdmin.getQueueProperties(queueOutput).get(QUEUE_MESSAGE_COUNT);
 
-        if ((count == 0) && doneLoading.get()) {
+        if ((countIn == 0) && (countOut == 0) && doneLoading.get()) {
             applicationContext.close();
         }
 
-        log.info("In the queue are {} messages", count);
+        log.info("In the queue are {} messages", countIn);
     }
 
     private AtomicBoolean doneLoading = new AtomicBoolean(true);
 
     //@Bean
-    CommandLineRunner commandLineRunner(MessagingConfig.ProcessingGateway processGateway,
+    CommandLineRunner commandLineRunner(ProcessingGateway processGateway,
                                         EnabledAnnotators enabledAnnotators) {
 
         return args -> {
