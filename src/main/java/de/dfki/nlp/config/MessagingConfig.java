@@ -1,7 +1,5 @@
 package de.dfki.nlp.config;
 
-import de.dfki.nlp.domain.ParsedInputText;
-import de.dfki.nlp.domain.rest.ServerRequest;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -21,13 +19,19 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.Header;
 
+import de.dfki.nlp.domain.ParsedInputText;
+import de.dfki.nlp.domain.rest.ServerRequest;
+
 @Configuration
 @IntegrationComponentScan
 public class MessagingConfig {
 
     public final static String queueName = "input";
+
     public final static String queueNameDnorm = "dnorm";
+
     public final static String queueNameChemspot = "chemspot";
+
     public final static String queueOutput = "results";
 
     @Bean
@@ -76,7 +80,6 @@ public class MessagingConfig {
         return outbound;
     }
 
-
     @Bean
     public MessageChannel amqpOutboundChannel() {
         return new DirectChannel();
@@ -87,31 +90,24 @@ public class MessagingConfig {
         return new DirectChannel();
     }
 
-    @MessagingGateway(
-            defaultRequestChannel = "requestChannel"
-    )
+    @MessagingGateway(defaultRequestChannel = "requestChannel")
     public interface ProcessingGateway {
 
         String HEADER_REQUEST_TIME = "requestTime";
 
         @Gateway(replyTimeout = Long.MAX_VALUE, requestTimeout = Long.MAX_VALUE)
-        void sendForProcessing(ServerRequest data,
-                               @Header(AmqpHeaders.EXPIRATION) String ttlInMs,
-                               @Header(HEADER_REQUEST_TIME) long now);
+        void sendForProcessing(ServerRequest data, @Header(AmqpHeaders.EXPIRATION) String ttlInMs,
+                @Header(HEADER_REQUEST_TIME) long now);
     }
 
-    @MessagingGateway(
-            defaultRequestChannel = "dnormChannel"
-    )
+    @MessagingGateway(defaultRequestChannel = "dnormChannel")
     public interface DNormGateway {
 
         @Gateway(replyTimeout = Long.MAX_VALUE, requestTimeout = Long.MAX_VALUE)
         String sendForProcessing(ParsedInputText data);
     }
 
-    @MessagingGateway(
-            defaultRequestChannel = "chemspotChannel"
-    )
+    @MessagingGateway(defaultRequestChannel = "chemspotChannel")
     public interface ChemSpotGateway {
 
         @Gateway(replyTimeout = Long.MAX_VALUE, requestTimeout = Long.MAX_VALUE)
@@ -148,9 +144,13 @@ public class MessagingConfig {
         return new DirectChannel();
     }
 
+    public MessageChannel requestChannel() {
+        return new DirectChannel();
+    }
+
     @Bean
     public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory,
-                                         Jackson2JsonMessageConverter jackson2Converter) {
+            Jackson2JsonMessageConverter jackson2Converter) {
         final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jackson2Converter);
         return rabbitTemplate;
@@ -160,6 +160,5 @@ public class MessagingConfig {
     public MappingJackson2MessageConverter consumerJackson2MessageConverter() {
         return new MappingJackson2MessageConverter();
     }
-
 
 }

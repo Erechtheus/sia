@@ -199,6 +199,7 @@
 						<profile>backend</profile>
 					</profiles>
 					<includeSystemScope>true</includeSystemScope>
+					<layout>ZIP</layout>
 				</configuration>
 			</plugin>
 

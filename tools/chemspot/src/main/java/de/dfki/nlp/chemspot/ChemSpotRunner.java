@@ -1,15 +1,5 @@
 package de.dfki.nlp.chemspot;
 
-import de.berlin.hu.chemspot.ChemSpot;
-import de.berlin.hu.chemspot.ChemSpotFactory;
-import de.berlin.hu.chemspot.Mention;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.io.IOUtils;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,13 +10,29 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.List;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import de.berlin.hu.chemspot.ChemSpot;
+import de.berlin.hu.chemspot.ChemSpotFactory;
+import de.berlin.hu.chemspot.Mention;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
+@Component
 public class ChemSpotRunner {
 
-    private final ChemSpot tagger;
-    String DOWNLOAD_LOCATION = "https://www.informatik.hu-berlin.de/forschung/gebiete/wbi/resources/chemspot/chemspot-2.0.zip";
+    private String downloadLocation;
 
-    public ChemSpotRunner() {
+    private final ChemSpot tagger;
+
+    public ChemSpotRunner(@Value("${chemspot.downloadurl}") String downloadLocation) {
+        this.downloadLocation = downloadLocation;
 
         try {
             this.downloadAndUnzipFiles();
@@ -36,28 +42,26 @@ public class ChemSpotRunner {
 
         File datadir = new File("chemspot-data", "chemspot-2.0");
 
-        tagger = ChemSpotFactory.createChemSpot(
-                new File(datadir, "dict.zip").toString(),
+        tagger = ChemSpotFactory.createChemSpot(new File(datadir, "dict.zip").toString(),
                 new File(datadir, "ids.zip").toString(),
                 new File(datadir, "multiclass.bin").toString());
-        String text = "The abilities of LHRH and a potent LHRH agonist ([D-Ser-(But),6, " +
-                "des-Gly-NH210]LHRH ethylamide) inhibit FSH responses by rat " +
-                "granulosa cells and Sertoli cells in vitro have been compared.";
+        String text = "The abilities of LHRH and a potent LHRH agonist ([D-Ser-(But),6, "
+                + "des-Gly-NH210]LHRH ethylamide) inhibit FSH responses by rat "
+                + "granulosa cells and Sertoli cells in vitro have been compared.";
 
         /**
-         * Example output
-         *
-         * 50	63	D-Ser-(But),6	null	eumed_tagger,	FORMULA
-         * 65	78	des-Gly-NH210	null	eumed_tagger,	FORMULA
-         * 84	94	ethylamide	null	eumed_tagger,	SYSTEMATIC
-         * 104	107	FSH	009002680	dictionary,	SYSTEMATIC
+         * Example output 50 63 D-Ser-(But),6 null eumed_tagger, FORMULA 65 78
+         * des-Gly-NH210 null eumed_tagger, FORMULA 84 94 ethylamide null eumed_tagger,
+         * SYSTEMATIC 104 107 FSH 009002680 dictionary, SYSTEMATIC
          */
 
+        log.info("Testing Chemspot with a sample sentence");
         for (Mention mention : tagger.tag(text)) {
-            System.out.printf("%d\t%d\t%s\t%s\t%s,\t%s%n",
-                    mention.getStart(), mention.getEnd(), mention.getText(),
-                    mention.getCHID(), mention.getSource(), mention.getType().toString());
+            System.out.printf("%d\t%d\t%s\t%s\t%s,\t%s%n", mention.getStart(), mention.getEnd(),
+                    mention.getText(), mention.getCHID(), mention.getSource(),
+                    mention.getType().toString());
         }
+        log.info("Testing Chemspot done ...");
 
     }
 
@@ -66,8 +70,8 @@ public class ChemSpotRunner {
         File targetFile = new File(location, "chemspot-2.0.zip");
 
         if (!location.exists() || !targetFile.exists()) {
-            log.info("Downloading from {}", DOWNLOAD_LOCATION);
-            unpackArchive(new URL(DOWNLOAD_LOCATION), targetFile, location);
+            log.info("Downloading from {}", downloadLocation);
+            unpackArchive(new URL(downloadLocation), targetFile, location);
         } else {
             log.info("Reusing chemspot-data from {}", location.getAbsolutePath());
         }
@@ -81,7 +85,8 @@ public class ChemSpotRunner {
      * @return the file to the url
      * @throws IOException
      */
-    private File unpackArchive(URL url, File downloadFile, File targetDir) throws IOException, ArchiveException {
+    private File unpackArchive(URL url, File downloadFile, File targetDir)
+            throws IOException, ArchiveException {
         if (!targetDir.exists()) {
             targetDir.mkdirs();
         }
@@ -115,8 +120,8 @@ public class ChemSpotRunner {
             throw new IOException("Could not create directory: " + targetDir);
         }
 
-        try (ArchiveInputStream input = new ArchiveStreamFactory()
-                .createArchiveInputStream(new BufferedInputStream(new FileInputStream(theFile)))) {
+        try (ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(
+                new BufferedInputStream(new FileInputStream(theFile)))) {
             ArchiveEntry entry;
             while ((entry = input.getNextEntry()) != null) {
                 if (!input.canReadEntryData(entry)) {

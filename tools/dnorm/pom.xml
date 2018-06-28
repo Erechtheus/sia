@@ -19,7 +19,7 @@
     </parent>
 
     <properties>
-        <start-class>de.dfki.nlp.dnorm.DNorm</start-class>
+        <start-class>de.dfki.nlp.dnorm.QueueAdapterDNorm</start-class>
     </properties>
 
     <dependencies>

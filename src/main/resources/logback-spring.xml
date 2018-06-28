@@ -7,28 +7,14 @@
 	<include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
 
 	<springProfile name="!cloud">
-		<logger name="org.springframework.web.client" level="TRACE"/>
-		<logger name="org.springframework.retry" level="TRACE"/>
 
 		<logger name="de.dfki.nlp" level="INFO"/>
 		<logger name="de.dfki.nlp.annotator" level="WARN"/>
 
-		<root level="INFO">
+		<root level="WARN">
 			<appender-ref ref="FILE"/>
 			<appender-ref ref="CONSOLE"/>
 		</root>
 	</springProfile>
-
-
-	<springProfile name="cloud">
-
-		<!--<logger name="org.springframework.integration.http.outbound" level="TRACE"/>
--->
-		<root level="INFO">
-			<appender-ref ref="FILE"/>
-			<appender-ref ref="CONSOLE"/>
-		</root>
-	</springProfile>
-
 
 </configuration>

@@ -19,7 +19,7 @@
     </parent>
 
     <properties>
-        <start-class>de.dfki.nlp.chemspot.ChemSpotRunner</start-class>
+        <start-class>de.dfki.nlp.chemspot.QueueAdapterChemSpot</start-class>
     </properties>
 
     <dependencies>

@@ -1,28 +1,26 @@
 package de.dfki.nlp.flow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimaps;
-import de.dfki.nlp.config.AnnotatorConfig;
-import de.dfki.nlp.config.EnabledAnnotators;
-import de.dfki.nlp.config.MessagingConfig;
-import de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
-import de.dfki.nlp.domain.AnnotationResponse;
-import de.dfki.nlp.domain.IdList;
-import de.dfki.nlp.domain.PredictionResult;
-import de.dfki.nlp.domain.PredictionType;
-import de.dfki.nlp.domain.exceptions.Errors;
-import de.dfki.nlp.domain.rest.ServerRequest;
-import de.dfki.nlp.domain.rest.ServerResponse;
-import de.dfki.nlp.errors.FailedMessage;
-import de.dfki.nlp.io.BufferingClientHttpResponseWrapper;
-import de.dfki.nlp.loader.MultiDocumentFetcher;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static de.dfki.nlp.domain.PredictionType.CHEMICAL;
+import static de.dfki.nlp.domain.PredictionType.DISEASE;
+import static de.dfki.nlp.domain.PredictionType.GENE;
+import static de.dfki.nlp.domain.PredictionType.MIRNA;
+import static de.dfki.nlp.domain.PredictionType.MUTATION;
+import static de.dfki.nlp.domain.PredictionType.ORGANISM;
+import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.aopalliance.aop.Advice;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.Queue;
@@ -63,26 +61,30 @@ import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimaps;
 
-import static de.dfki.nlp.domain.PredictionType.CHEMICAL;
-import static de.dfki.nlp.domain.PredictionType.DISEASE;
-import static de.dfki.nlp.domain.PredictionType.GENE;
-import static de.dfki.nlp.domain.PredictionType.MIRNA;
-import static de.dfki.nlp.domain.PredictionType.MUTATION;
-import static de.dfki.nlp.domain.PredictionType.ORGANISM;
-import static org.springframework.amqp.rabbit.config.RetryInterceptorBuilder.stateless;
+import de.dfki.nlp.config.AnnotatorConfig;
+import de.dfki.nlp.config.EnabledAnnotators;
+import de.dfki.nlp.config.MessagingConfig;
+import de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
+import de.dfki.nlp.domain.AnnotationResponse;
+import de.dfki.nlp.domain.IdList;
+import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.PredictionType;
+import de.dfki.nlp.domain.exceptions.Errors;
+import de.dfki.nlp.domain.rest.ServerRequest;
+import de.dfki.nlp.domain.rest.ServerResponse;
+import de.dfki.nlp.errors.FailedMessage;
+import de.dfki.nlp.io.BufferingClientHttpResponseWrapper;
+import de.dfki.nlp.loader.MultiDocumentFetcher;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -155,7 +157,8 @@ public class FlowHandler {
         fileWritingMessageHandler.setExpectReply(false);
 
         return IntegrationFlows
-                .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput).messageConverter(messageConverter))
+                .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput)
+                        .messageConverter(messageConverter))
                 // we might want to print only viable results, ut for performance analysis, the complete results
                 // are nice to have, as they have timestamps
                 .filter(AnnotationResponse.class, source -> source.getPredictionResults().size() > 0)

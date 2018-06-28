@@ -1,36 +1,5 @@
 package de.dfki.nlp.dnorm;
 
-import banner.eval.BANNER;
-import banner.postprocessing.PostProcessor;
-import banner.tagging.CRFTagger;
-import banner.tokenization.Tokenizer;
-import banner.types.Mention;
-import banner.types.Sentence;
-import banner.types.SentenceWithOffset;
-import banner.util.RankedList;
-import banner.util.SentenceBreaker;
-import com.google.common.io.Resources;
-import de.dfki.nlp.domain.PredictionResult;
-import dnorm.core.DiseaseNameAnalyzer;
-import dnorm.core.Lexicon;
-import dnorm.core.MEDICLexiconLoader;
-import dnorm.core.SynonymTrainer;
-import dnorm.types.FullRankSynonymMatrix;
-import dnorm.types.SynonymMatrix;
-import dragon.nlp.tool.Tagger;
-import dragon.nlp.tool.lemmatiser.EngLemmatiser;
-import dragon.util.EnvVariable;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalConfiguration;
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.commons.io.IOUtils;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,18 +11,60 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.google.common.io.Resources;
+
+import banner.eval.BANNER;
+import banner.postprocessing.PostProcessor;
+import banner.tagging.CRFTagger;
+import banner.tokenization.Tokenizer;
+import banner.types.Mention;
+import banner.types.Sentence;
+import banner.types.SentenceWithOffset;
+import banner.util.RankedList;
+import banner.util.SentenceBreaker;
+import de.dfki.nlp.domain.PredictionResult;
+import dnorm.core.DiseaseNameAnalyzer;
+import dnorm.core.Lexicon;
+import dnorm.core.MEDICLexiconLoader;
+import dnorm.core.SynonymTrainer;
+import dnorm.types.FullRankSynonymMatrix;
+import dnorm.types.SynonymMatrix;
+import dragon.nlp.tool.Tagger;
+import dragon.nlp.tool.lemmatiser.EngLemmatiser;
+import dragon.util.EnvVariable;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
+@Component
 public class DNorm {
 
     private static CRFTagger tagger;
+
     private static XMLConfiguration config;
+
     private final SentenceBreaker breaker;
-    private String DOWNLOAD_LOCATION = "https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/tmTools/download/DNorm/DNorm-0.0.7.tgz";
+
+    private final String downloadLocation;
 
     private SynonymTrainer syn;
+
     private Tokenizer tokenizer;
 
-    public DNorm() {
+    public DNorm(@Value("${dnorm.downloadurl}") String downloadLocation) {
+
+        this.downloadLocation = downloadLocation;
 
         try {
             this.downloadAndUnzipFiles();
@@ -65,7 +76,8 @@ public class DNorm {
         String matrixFilename = "dnorm-data/DNorm-0.0.7/output/simmatrix_NCBIDisease_e4.bin";
 
         // Do the setup
-        DiseaseNameAnalyzer analyzer = DiseaseNameAnalyzer.getDiseaseNameAnalyzer(true, true, false, true);
+        DiseaseNameAnalyzer analyzer = DiseaseNameAnalyzer.getDiseaseNameAnalyzer(true, true, false,
+                true);
         MEDICLexiconLoader loader = new MEDICLexiconLoader();
         Lexicon lex = new Lexicon(analyzer);
         loader.loadLexicon(lex, lexiconFilename);
@@ -88,7 +100,6 @@ public class DNorm {
         List<Sentence> outputSentences = processSentences_BANNER(inputSentences);
         return output(outputSentences);
     }
-
 
     private List<Sentence> getNextSentenceList(String input) {
         List<Sentence> currentSentences = new ArrayList<Sentence>();
@@ -134,10 +145,12 @@ public class DNorm {
         List<Sentence> outputSentences = new ArrayList<Sentence>(inputSentences.size());
         for (Sentence inputSentence : inputSentences) {
             int offset = ((SentenceWithOffset) inputSentence).getOffset();
-            Sentence bannerSentence = new SentenceWithOffset(inputSentence.getSentenceId(), inputSentence.getDocumentId(), inputSentence.getText(), offset);
+            Sentence bannerSentence = new SentenceWithOffset(inputSentence.getSentenceId(),
+                    inputSentence.getDocumentId(), inputSentence.getText(), offset);
             Tokenizer tokenizer = BANNER.getTokenizer(config);
             PostProcessor postProcessor = BANNER.getPostProcessor(config);
-            Sentence outputSentence = BANNER.process(tagger, tokenizer, postProcessor, bannerSentence);
+            Sentence outputSentence = BANNER.process(tagger, tokenizer, postProcessor,
+                    bannerSentence);
 
             for (Mention mention : outputSentence.getMentions(Mention.MentionType.Found)) {
                 String lookupText = mention.getText();
@@ -153,8 +166,8 @@ public class DNorm {
         return outputSentences;
     }
 
-
-    private static void prepareBANNER(URL configurationFile) throws IOException, ConfigurationException {
+    private static void prepareBANNER(URL configurationFile)
+            throws IOException, ConfigurationException {
         long start = System.currentTimeMillis();
         config = new XMLConfiguration(configurationFile);
 
@@ -163,7 +176,8 @@ public class DNorm {
         EnvVariable.setCharSet("US-ASCII");
         EngLemmatiser lemmatiser = BANNER.getLemmatiser(config);
         Tagger posTagger = BANNER.getPosTagger(config);
-        HierarchicalConfiguration localConfig = config.configurationAt(BANNER.class.getPackage().getName());
+        HierarchicalConfiguration localConfig = config.configurationAt(
+                BANNER.class.getPackage().getName());
         String modelFilename = localConfig.getString("modelFilename");
         log.info("Model: " + modelFilename);
         tagger = CRFTagger.load(new File(modelFilename), lemmatiser, posTagger);
@@ -175,8 +189,8 @@ public class DNorm {
         File targetFile = new File(location, "DNorm-0.0.7.tgz");
 
         if (!location.exists() || !targetFile.exists()) {
-            log.info("Downloading from {}", DOWNLOAD_LOCATION);
-            unpackArchive(new URL(DOWNLOAD_LOCATION), targetFile, location);
+            log.info("Downloading from {}", downloadLocation);
+            unpackArchive(new URL(downloadLocation), targetFile, location);
         } else {
             log.info("Reusing dnorm-data from {}", location.getAbsolutePath());
         }
@@ -190,7 +204,8 @@ public class DNorm {
      * @return the file to the url
      * @throws IOException
      */
-    private File unpackArchive(URL url, File downloadFile, File targetDir) throws IOException, ArchiveException {
+    private File unpackArchive(URL url, File downloadFile, File targetDir)
+            throws IOException, ArchiveException {
         if (!targetDir.exists()) {
             targetDir.mkdirs();
         }
@@ -224,8 +239,9 @@ public class DNorm {
             throw new IOException("Could not create directory: " + targetDir);
         }
 
-        try (ArchiveInputStream input = new ArchiveStreamFactory()
-                .createArchiveInputStream(new BufferedInputStream(new GzipCompressorInputStream(new FileInputStream(theFile))))) {
+        try (ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(
+                new BufferedInputStream(
+                        new GzipCompressorInputStream(new FileInputStream(theFile))))) {
             ArchiveEntry entry = null;
             while ((entry = input.getNextEntry()) != null) {
                 if (!input.canReadEntryData(entry)) {
@@ -255,6 +271,5 @@ public class DNorm {
     private boolean buildDirectory(File file) {
         return file.exists() || file.mkdirs();
     }
-
 
 }

@@ -1,17 +1,6 @@
 package de.dfki.nlp.chemspot.amqp;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dfki.nlp.chemspot.ChemSpotRunner;
-import de.dfki.nlp.chemspot.QueueAdapterChemSpot;
-import de.dfki.nlp.domain.ParsedInputText;
-import de.dfki.nlp.domain.PredictionResult;
-import de.dfki.nlp.domain.PredictionType;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.Queue;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import static de.dfki.nlp.domain.PredictionResult.Section.T;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,13 +8,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.dfki.nlp.domain.PredictionResult.Section.T;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.dfki.nlp.chemspot.ChemSpotRunner;
+import de.dfki.nlp.chemspot.QueueAdapterChemSpot;
+import de.dfki.nlp.domain.ParsedInputText;
+import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.PredictionType;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class QueueAdapter {
 
-    private ChemSpotRunner chemSpotRunner = new ChemSpotRunner();
+    @Autowired
+    private ChemSpotRunner chemSpotRunner;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -34,7 +37,8 @@ public class QueueAdapter {
     public String processOrder(ParsedInputText payload) throws JsonProcessingException {
 
         String docId = payload.getExternalId();
-        if (docId == null) return objectMapper.writeValueAsString(Collections.emptySet());
+        if (docId == null)
+            return objectMapper.writeValueAsString(Collections.emptySet());
 
         Set<PredictionResult> results = new HashSet<>();
 
@@ -44,9 +48,11 @@ public class QueueAdapter {
         for (PredictionResult.Section section : PredictionResult.Section.values()) {
 
             String analyzetext = section == T ? payload.getTitle() : payload.getAbstractText();
-            if (analyzetext == null) continue;
+            if (analyzetext == null)
+                continue;
 
-            results.addAll(detectChemSpot(analyzetext, section, docId).collect(Collectors.toList()));
+            results.addAll(
+                    detectChemSpot(analyzetext, section, docId).collect(Collectors.toList()));
 
         }
 
@@ -56,7 +62,8 @@ public class QueueAdapter {
 
     }
 
-    private Stream<PredictionResult> detectChemSpot(String analyzetext, PredictionResult.Section section, String externalID) {
+    private Stream<PredictionResult> detectChemSpot(String analyzetext,
+            PredictionResult.Section section, String externalID) {
         return chemSpotRunner.parse(analyzetext).stream().map(m -> {
 
             PredictionResult predictionResult = new PredictionResult();
@@ -70,14 +77,8 @@ public class QueueAdapter {
             predictionResult.setDatabaseId(m.getCHID());
 
             /**
-             *         SYSTEMATIC,
-             *         IDENTIFIER,
-             *         FORMULA,
-             *         TRIVIAL,
-             *         ABBREVIATION,
-             *         FAMILY,
-             *         MULTIPLE,
-             *         UNKNOWN;
+             * SYSTEMATIC, IDENTIFIER, FORMULA, TRIVIAL, ABBREVIATION, FAMILY, MULTIPLE,
+             * UNKNOWN;
              */
 
             predictionResult.setType(PredictionType.CHEMICAL);

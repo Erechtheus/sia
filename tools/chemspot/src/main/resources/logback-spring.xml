@@ -7,7 +7,8 @@
 	<include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
 
 	<springProfile name="!cloud">
-		<logger name="de.dfki.nlp" level="TRACE"/>
+		<logger name="de.dfki.nlp" level="INFO"/>
+		<logger name="de.dfki.nlp.annotator" level="WARN"/>
 
 		<root level="INFO">
 			<appender-ref ref="FILE"/>

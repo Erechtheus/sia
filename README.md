@@ -64,21 +64,94 @@ To extend SIA for additional Named Entity Recognition tools you have to:
 * Implement the Annotator [interface](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/annotator/Annotator.java)
 
 Consult the examples in the corresponding [package](https://github.com/Erechtheus/sia/tree/master/src/main/java/de/dfki/nlp/annotator) for implementation details. 
-Afterwards, for correct message routing, it is necessary to define the input and output channels. Input channels can be freely named, but the output channel requires the name **parsed**.
+Afterwards, for correct message routing, it is necessary to define the input. Input channels can be freely named, but we recommend the name of the annotator.
 For example:
 
 ```java
-@Transformer(inputChannel = "yourAnnotator", outputChannel = "parsed")
+@Transformer(inputChannel = "yourAnnotator")
 ```
 
-This annotation placed on the annotator defines that inout are coming from the yourAnnotator channel and results of the method will be routed by the system to the _parsed_ channel. Inernally channels are mapped to queues automatically.
+This annotation placed on the annotator defines that inputs are coming from the yourAnnotator channel. Internally channels are mapped to queues automatically.
 
-* Add the your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L169-L171) and set the [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) accordingly. 
+* Add your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L229-L237) and 
+  define the set the [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) accordingly. 
 
 For example:
 
 ```java
-.recipient("yourAnnotator", "headers['types'].contains(T(de.dfki.nlp.domain.PredictionType).CHEMICAL)")
+.recipientMessageSelector("yourAnnotator", message -> headerContains(message, CHEMICAL) && enabledAnnotators.yourAnnotator)
 ```
 
-Here the `yourAnnotator` has to match the transformer `inputChannel` definition. And defines that all requests that need to be tagged with `CHEMICAL` will be send to the yourAnnotator channel. `headers['types'].contains` is a SPeL expression which can be used to evaluate scripts against message. In this case, checking if in the header a field called `types` contains the enum CHEMICAL.
+Here the `yourAnnotator` has to match the transformer `inputChannel` definition. And defines that all requests that need to be tagged with `CHEMICAL` will be send to the yourAnnotator channel.
+ `headerContains(message, CHEMICAL)s` is a helper method to check if in the header a field called `types` contains the enum CHEMICAL.
+ 
+* Furthermore `enabledAnnotators` is an injected configuration bean which allows to specify which annotators to run.
+
+Simply add a new boolean property with `yourAnnotator` to the class allows to control which annotators to use. 
+Check [application.properties](https://github.com/Erechtheus/sia/blob/master/src/main/resources/application.properties#L48) for an example.
+ 
+## Available Annotators
+
+- BannerNER
+- DiseasesNER
+- Linnaeus
+- MirNER
+- Seth
+- ChemSpot (external)
+- DNorm (external)
+ 
+## External annotators
+
+DNorm and ChemSpot are integrated out of process. This means that you need to start the annotators before you can use them.
+Communication is handled via a dedicated queue for each handler respectively.
+
+- Start DNorm
+
+    ./mvnw -f tools/dnorm/pom.xml -DskipTests package
+    java -Xmx8g -jar tools/dnorm/target/dnorm-0.0.1-SNAPSHOT.jar
+
+- Start ChemSpot
+
+      ./mvnw -f tools/chemspot/pom.xml package
+      java -Xmx12g -jar tools/chemspot/target/chemspot-0.0.1-SNAPSHOT.jar
+
+
+## Tagging PubMed Dumps
+
+You can simply tag pubmed articles from `ftp://ftp.ncbi.nlm.nih.gov/pubmed/baseline/` by putting them into the directory `tools/pubmedcache`.
+
+Then start any external annotators that you want to use.
+Configure the annotators to use by creating an `application.properties` file in the current directory and add the annotators you want to use.
+
+If you don't specify one, a default configuration is applied:
+
+```properties
+sia.annotators.banner=false
+sia.annotators.diseaseNer=false
+sia.annotators.mirNer=false
+sia.annotators.linnaeus=false
+sia.annotators.seth=true
+
+# external
+sia.annotators.dnorm=false
+sia.annotators.chemspot=false
+```
+
+Finally start the `SiaPubmedAnnotator` with the _driver_ and _backend_ profile.
+The _driver_  profile ensures that output is collected into the directory `annotated`,
+while the _backend_ profile ensures that the internal annotators are started as well.
+
+    ./mvnw -DskipTests package
+    java -cp target/sia-0.0.1-SNAPSHOT.jar -Dloader.main=de.dfki.nlp.SiaPubmedAnnotator org.springframework.boot.loader.PropertiesLauncher --spring.profiles.active=backend,driver
+
+```bash
+
+```
+    
+Example output
+    
+```bash
+$ ls -lh annotated
+1.0K Jun 28 23:15 annotation-results_2018-06-28_11-15-07.json 
+$ head annotated/a*
+{"predictionResults":[{"document_id":"10022392","section":"A","init":1085,"end":1090,"score":1.0,"annotated_text":"T337A","type":"MUTATION"} ....
