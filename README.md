@@ -107,8 +107,8 @@ Communication is handled via a dedicated queue for each handler respectively.
 
 - Start DNorm
 
-    ./mvnw -f tools/dnorm/pom.xml -DskipTests package
-    java -Xmx8g -jar tools/dnorm/target/dnorm-0.0.1-SNAPSHOT.jar
+      ./mvnw -f tools/dnorm/pom.xml -DskipTests package
+      java -Xmx8g -jar tools/dnorm/target/dnorm-0.0.1-SNAPSHOT.jar
 
 - Start ChemSpot
 
@@ -123,7 +123,7 @@ You can simply tag pubmed articles from `ftp://ftp.ncbi.nlm.nih.gov/pubmed/basel
 Then start any external annotators that you want to use.
 Configure the annotators to use by creating an `application.properties` file in the current directory and add the annotators you want to use.
 
-If you don't specify one, a default configuration is applied:
+If you don't specify one, the following default configuration is applied:
 
 ```properties
 sia.annotators.banner=false
@@ -141,11 +141,13 @@ Finally start the `SiaPubmedAnnotator` with the _driver_ and _backend_ profile.
 The _driver_  profile ensures that output is collected into the directory `annotated`,
 while the _backend_ profile ensures that the internal annotators are started as well.
 
-    ./mvnw -DskipTests package
-    java -cp target/sia-0.0.1-SNAPSHOT.jar -Dloader.main=de.dfki.nlp.SiaPubmedAnnotator org.springframework.boot.loader.PropertiesLauncher --spring.profiles.active=backend,driver
 
 ```bash
-
+./mvnw -DskipTests package
+java -cp target/sia-0.0.1-SNAPSHOT.jar \
+     -Dloader.main=de.dfki.nlp.SiaPubmedAnnotator \
+     org.springframework.boot.loader.PropertiesLauncher \
+     --spring.profiles.active=backend,driver
 ```
     
 Example output
