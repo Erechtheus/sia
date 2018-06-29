@@ -3,7 +3,6 @@ package de.dfki.nlp;
 import static de.dfki.nlp.config.MessagingConfig.ProcessingGateway;
 import static de.dfki.nlp.config.MessagingConfig.queueName;
 import static de.dfki.nlp.config.MessagingConfig.queueOutput;
-import static org.springframework.amqp.rabbit.core.RabbitAdmin.QUEUE_MESSAGE_COUNT;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -17,24 +16,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.oro.io.GlobFilenameFilter;
-import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.client.RestTemplate;
 
-import com.google.common.collect.Iterables;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 import de.dfki.nlp.config.EnabledAnnotators;
@@ -49,7 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @EnableIntegration
 @EnableRetry
-@EnableScheduling
 public class SiaPubmedAnnotator {
 
     public static void main(String[] args) {
@@ -59,31 +62,65 @@ public class SiaPubmedAnnotator {
     }
 
     @Autowired
-    private AmqpAdmin amqpAdmin;
+    RabbitProperties rabbitProperties;
+
+    @Configuration
+    @EnableScheduling
+    @Profile("driver")
+    public class EnableDriverScheduling {
+        // enable scheduling only when the driver is active
+    }
+
+    @Bean
+    @Profile("driver")
+    RestTemplate restTemplate() {
+        // Default requestFactory does not handle authentication section of URL
+        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory(
+                HttpClientBuilder.create().build());
+        return new RestTemplate(clientHttpRequestFactory);
+    };
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
 
     private AtomicBoolean shutdown = new AtomicBoolean(false);
 
-    @Scheduled(fixedRate = 5000)
-    public void reportCurrentTime() throws InterruptedException {
+    @Autowired
+    RestTemplate restTemplate;
 
-        // check length
-        Integer countIn = (Integer) amqpAdmin.getQueueProperties(queueName).get(
-                QUEUE_MESSAGE_COUNT);
-        Integer countOut = (Integer) amqpAdmin.getQueueProperties(queueOutput).get(
-                QUEUE_MESSAGE_COUNT);
+    @Scheduled(fixedRate = 10000)
+    public void reportQueueLength() throws InterruptedException {
+
+        // talk to rabbit management port
+        long countIn = 0;
+        long countOut = 0;
+        String url = String.format("http://%s:%s@%s:15672/api/queues",
+                rabbitProperties.getUsername(), rabbitProperties.getPassword(),
+                rabbitProperties.getHost());
+
+        JsonNode queueStats = restTemplate.getForObject(url, JsonNode.class);
+
+        for (JsonNode queueStat : queueStats) {
+
+            long messages = queueStat.at("/messages").asLong();
+            String name = queueStat.at("/name").asText();
+
+            if (queueName.equals(name)) {
+                countIn = messages;
+            } else if (queueOutput.equals(name)) {
+                countOut = messages;
+            }
+
+        }
 
         if ((countIn == 0) && (countOut == 0) && doneLoading.get() && !shutdown.get()) {
             shutdown.set(true);
-            log.info("Done annotating documents");
-            // don't close immediately ..
-            TimeUnit.SECONDS.sleep(5);
+            log.info("Done annotating documents, stopping");
             applicationContext.close();
         }
 
-        log.info("Message counts input queue: {} output queue: {}", countIn, countOut);
+        log.debug("Message counts - input queue: {} output queue: {}", countIn, countOut);
+
     }
 
     private AtomicBoolean doneLoading = new AtomicBoolean(false);
@@ -131,7 +168,7 @@ public class SiaPubmedAnnotator {
                                 }
                             });
 
-                    Iterables.limit(read.getPubmedArticleOrPubmedBookArticle(), 100).forEach(a -> {
+                    read.getPubmedArticleOrPubmedBookArticle().forEach(a -> {
                         ParsedInputText parsedInputText = PubMedDocumentFetcher.convert(
                                 (PubmedArticle) a);
 
@@ -152,6 +189,9 @@ public class SiaPubmedAnnotator {
                                 System.currentTimeMillis());
 
                     });
+
+                    log.info("Sent {} articles for processing",
+                            read.getPubmedArticleOrPubmedBookArticle().size());
 
                 }
             }

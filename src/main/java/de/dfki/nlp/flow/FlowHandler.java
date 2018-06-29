@@ -118,6 +118,8 @@ public class FlowHandler {
 
                     failedMessage.setServerErrorCause(payload.getMessage());
 
+                    payload.getCause().printStackTrace();
+
                     // try to replicate most of the message and the error
                     if (payload.getCause() instanceof HttpClientErrorException) {
                         HttpClientErrorException cause = (HttpClientErrorException) payload.getCause();
@@ -151,6 +153,8 @@ public class FlowHandler {
 
         String filename = new SimpleDateFormat("'annotation-results_'yyyy-MM-dd_hh-mm-ss'.json'").format(new Date());
 
+        log.info("Writing annotation output to {}", new File("annotated", filename).toString());
+
         fileWritingMessageHandler.setFileExistsMode(FileExistsMode.APPEND);
         fileWritingMessageHandler.setAppendNewLine(true);
         fileWritingMessageHandler.setFileNameGenerator(message -> filename);
@@ -159,11 +163,23 @@ public class FlowHandler {
         return IntegrationFlows
                 .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput)
                         .messageConverter(messageConverter))
-                // we might want to print only viable results, ut for performance analysis, the complete results
+                // we might want to print only viable results, but for performance analysis, the complete results
                 // are nice to have, as they have timestamps
-                .filter(AnnotationResponse.class, source -> source.getPredictionResults().size() > 0)
+                //.filter(AnnotationResponse.class, source -> source.getPredictionResults().size() > 0)
                 .transform(Transformers.toJson())
                 .handle(fileWritingMessageHandler)
+                .get();
+    }
+
+    @Bean
+    @Profile("!driver")
+    IntegrationFlow resultHandlerDummy(ConnectionFactory connectionFactory, Jackson2JsonMessageConverter messageConverter) {
+
+        return IntegrationFlows
+                .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput)
+                        .messageConverter(messageConverter))
+                // do nothing
+                .handle(message -> {})
                 .get();
     }
 
@@ -196,7 +212,7 @@ public class FlowHandler {
                                         .messageConverter(messageConverter)
                                         .headerMapper(DefaultAmqpHeaderMapper.inboundMapper())
                                         .replyTimeout(Long.MAX_VALUE)
-                                        .defaultReplyTo("results")
+                                        .defaultReplyTo(MessagingConfig.queueOutput)
                                         // retry the complete message
                                         //.retryTemplate(retryOperationsInterceptor())
                                         //.adviceChain(retryOperationsInterceptor())

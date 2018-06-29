@@ -1,27 +1,31 @@
 package de.dfki.nlp.genes;
 
 
-import banner.BannerProperties;
-import banner.Sentence;
-import banner.tagging.CRFTagger;
-import banner.tagging.Mention;
-import banner.tokenization.Tokenizer;
-import com.google.common.io.ByteSource;
-import com.google.common.io.Files;
-import com.google.common.io.Resources;
-import lombok.extern.slf4j.Slf4j;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
-import java.util.Properties;
+import com.google.common.io.ByteSource;
+import com.google.common.io.Files;
+import com.google.common.io.Resources;
+
+import banner.BannerProperties;
+import banner.Sentence;
+import banner.tagging.CRFTagger;
+import banner.tagging.Mention;
+import banner.tokenization.Tokenizer;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class BannerNer {
@@ -57,11 +61,17 @@ public class BannerNer {
 
     public List<Mention> extractFromText(String text) {
 
+        if (StringUtils.isEmpty(text)) return Collections.emptyList();
+
         Sentence sentence = new Sentence(text);
         tokenizer.tokenize(sentence);
-        tagger.tag(sentence);
 
-        // TODO translate token offsets into char offsets
+//        try {
+            tagger.tag(sentence);
+//        } catch (NullPointerException e) {
+//            return Collections.emptyList();
+//        }
+
         return sentence.getMentions();
     }
 

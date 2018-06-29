@@ -1,14 +1,6 @@
 package de.dfki.nlp.annotator;
 
-import de.dfki.nlp.domain.ParsedInputText;
-import de.dfki.nlp.domain.PredictionResult;
-import de.dfki.nlp.domain.PredictionType;
-import de.dfki.nlp.genes.BannerNer;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
-import org.springframework.integration.annotation.Transformer;
-import org.springframework.stereotype.Component;
+import static de.dfki.nlp.domain.PredictionResult.Section.T;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,7 +8,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.dfki.nlp.domain.PredictionResult.Section.T;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.integration.annotation.Transformer;
+import org.springframework.stereotype.Component;
+
+import de.dfki.nlp.domain.ParsedInputText;
+import de.dfki.nlp.domain.PredictionResult;
+import de.dfki.nlp.domain.PredictionType;
+import de.dfki.nlp.genes.BannerNer;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -53,7 +54,8 @@ public class BannerNERAnnotator implements Annotator {
 
     }
 
-    private Stream<PredictionResult> detectBanner(String text, PredictionResult.Section section, String externalID) {
-        return bannerNERAnnotator.extractFromText(text).stream().map(l -> new PredictionResult(externalID, section, l.getStart(), l.getEnd(), 1.0, l.getText(), PredictionType.GENE));
+    // Banner is not thread safe
+    private synchronized Stream<PredictionResult> detectBanner(String text, PredictionResult.Section section, String externalID) {
+        return bannerNERAnnotator.extractFromText(text).stream().map(m -> new PredictionResult(externalID, section, m.getStartChar(), m.getEndChar(), 1.0, m.getText(), PredictionType.GENE));
     }
 }
