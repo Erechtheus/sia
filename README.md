@@ -43,7 +43,7 @@ The server is listening on port `8080` per default.
 
 ### getAnnotation
 
-Issue the following `curl` request to trigger a new annotation request
+Issue the following `curl` request to trigger a new annotation request with a sample payload
 
     curl -vX POST http://localhost:8080/call -d @src/test/resources/samplepayloadGetannotations.json --header "Content-Type: application/json"
 
@@ -64,7 +64,7 @@ To extend SIA for additional Named Entity Recognition tools you have to:
 * Implement the Annotator [interface](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/annotator/Annotator.java)
 
 Consult the examples in the corresponding [package](https://github.com/Erechtheus/sia/tree/master/src/main/java/de/dfki/nlp/annotator) for implementation details. 
-Afterwards, for correct message routing, it is necessary to define the input. Input channels can be freely named, but we recommend the name of the annotator.
+Afterwards, for correct message routing, it is necessary to define the input channel. Input channels can be freely named, but we recommend to use the name of the annotator.
 For example:
 
 ```java
@@ -73,8 +73,8 @@ For example:
 
 This annotation placed on the annotator defines that inputs are coming from the yourAnnotator channel. Internally channels are mapped to queues automatically.
 
-* Add your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L229-L237) and 
-  define the set the [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) accordingly. 
+* Add your annotator as recipient in [FlowHandler](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/flow/FlowHandler.java#L248-L256) and 
+  define the set of [PredictionType](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/domain/PredictionType.java) your annotator responds to accordingly. 
 
 For example:
 
@@ -83,24 +83,56 @@ For example:
 ```
 
 Here the `yourAnnotator` has to match the transformer `inputChannel` definition. And defines that all requests that need to be tagged with `CHEMICAL` will be send to the yourAnnotator channel.
- `headerContains(message, CHEMICAL)s` is a helper method to check if in the header a field called `types` contains the enum CHEMICAL.
+ `headerContains(message, CHEMICAL)` is a helper method to check if in the header a field called `types` contains the enum CHEMICAL.
+ The header is automatically populated from the request message containing the annotator types requested.
  
-* Furthermore `enabledAnnotators` is an injected configuration bean which allows to specify which annotators to run.
+* Furthermore `enabledAnnotators` is an injected configuration [bean](https://github.com/Erechtheus/sia/blob/master/src/main/java/de/dfki/nlp/config/EnabledAnnotators.java)
+  which allows to specify which annotators to enable.
 
-Simply add a new boolean property with `yourAnnotator` to the class allows to control which annotators to use. 
-Check [application.properties](https://github.com/Erechtheus/sia/blob/master/src/main/resources/application.properties#L48) for an example.
+Simply add a new boolean property with `yourAnnotator` to the class allows to control which annotators to enable. 
+Check [application.properties](https://github.com/Erechtheus/sia/blob/master/src/main/resources/application.properties#L48).
+
  
+
 ## Available Annotators
 
-- BannerNER
-- DiseasesNER
-- Linnaeus
-- MirNER
-- Seth
-- ChemSpot (external)
-- DNorm (external)
+#### BannerNER
+
+BANNER is a named entity recognition system, primarily intended for biomedical text.
+
+<http://banner.sourceforge.net/>
+
+#### DiseasesNER
+DiseasesNER is using a large dictionary of desease mentiones.
+
+#### Linnaeus
+Species name recognition and normalization software.
+
+<http://linnaeus.sourceforge.net/>
+
+### MirNER
+mirNer is a simple regex based tool to detect MicroRna mentions in text, following the mi-RNA definition of Victor Ambroset al., (2003). A uniform system for microRNA annotation. RNA 2003 9(3):277-279.
+
+<https://github.com/Erechtheus/mirNer>
+
+### SETH
+SNP Extraction Tool for Human Variations
+SETH is a software that performs named entity recognition (NER) of genetic variants (with an emphasis on single nucleotide polymorphisms (SNPs) and other short sequence variations) from natural language texts. 
+
+<https://rockt.github.io/SETH/>
+
+### ChemSpot (external)
+ChemSpot is a named entity recognition tool for identifying mentions of chemicals in natural language texts, including trivial names, drugs, abbreviations, molecular formulas and IUPAC entities.
+
+<https://www.informatik.hu-berlin.de/de/forschung/gebiete/wbi/resources/chemspot/chemspot>
+
+
+### DNorm (external)
+DNorm is an automated method for determining which diseases are mentioned in biomedical text, the task of disease normalization. Diseases have a central role in many lines of biomedical research, making this task important for many lines of inquiry, including etiology (e.g. gene-disease relationships) and clinical aspects (e.g. diagnosis, prevention, and treatment).
  
-## External annotators
+<https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/tmTools/DNorm.html>
+ 
+### External annotators
 
 DNorm and ChemSpot are integrated out of process. This means that you need to start the annotators before you can use them.
 Communication is handled via a dedicated queue for each handler respectively.
@@ -118,12 +150,12 @@ Communication is handled via a dedicated queue for each handler respectively.
 
 ## Tagging PubMed Dumps
 
-You can simply tag pubmed articles from `ftp://ftp.ncbi.nlm.nih.gov/pubmed/baseline/` by putting them into the directory `tools/pubmedcache`.
+You can simply tag pubmed articles from <ftp://ftp.ncbi.nlm.nih.gov/pubmed/baseline/> by putting them into the directory `tools/pubmedcache`.
 
-Then start any external annotators that you want to use.
 Configure the annotators to use by creating an `application.properties` file in the current directory and add the annotators you want to use.
+Then start any external annotators that you want to use.
 
-If you don't specify one, the following default configuration is applied:
+If you don't customize the annotators, the following default configuration is applied:
 
 ```properties
 sia.annotators.banner=false
@@ -137,9 +169,9 @@ sia.annotators.dnorm=false
 sia.annotators.chemspot=false
 ```
 
-Finally start the `SiaPubmedAnnotator` with the _driver_ and _backend_ profile.
+Finally start the `SiaPubmedAnnotator` class with the _driver_ and _backend_ profile enabled.
 The _driver_  profile ensures that output is collected into the directory `annotated`,
-while the _backend_ profile ensures that the internal annotators are started as well.
+while the _backend_ profile ensures that the any internal annotators are started as well.
 
 
 ```bash
