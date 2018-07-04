@@ -24,6 +24,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.common.io.Resources;
@@ -79,9 +80,9 @@ public class DNorm {
                 true);
         MEDICLexiconLoader loader = new MEDICLexiconLoader();
         Lexicon lex = new Lexicon(analyzer);
-        loader.loadLexicon(lex, dNormConfig.lexiconFilename);
+        loader.loadLexicon(lex, dNormConfig.getLexiconFilename());
         lex.prepare();
-        SynonymMatrix matrix = FullRankSynonymMatrix.load(dNormConfig.matrixFilename);
+        SynonymMatrix matrix = FullRankSynonymMatrix.load(dNormConfig.getMatrixFilename());
         syn = new SynonymTrainer(lex, matrix, 1000);
 
         try {
@@ -184,13 +185,13 @@ public class DNorm {
     }
 
     private void downloadAndUnzipFiles() throws IOException, ArchiveException {
-        File targetFile = new File(dNormConfig.dataDirectory, dNormConfig.downloadFileName);
+        File targetFile = new File(dNormConfig.getDataDirectory(), dNormConfig.getDownloadFileName());
 
-        if (!dNormConfig.dataDirectory.exists() || !targetFile.exists()
-                || !dNormConfig.unpackedDirectory.exists()) {
-            unpackArchive(dNormConfig.downloadUrl, targetFile, dNormConfig.dataDirectory);
+        if (!dNormConfig.getDataDirectory().exists() || !targetFile.exists()
+                || !dNormConfig.getUnpackedDirectory().exists()) {
+            unpackArchive(dNormConfig.getDownloadUrl(), targetFile, dNormConfig.getDataDirectory());
         } else {
-            log.info("Reusing dnorm-data from {}", dNormConfig.dataDirectory.getAbsolutePath());
+            log.info("Reusing dnorm-data from {}", dNormConfig.getDataDirectory().getAbsolutePath());
         }
     }
 

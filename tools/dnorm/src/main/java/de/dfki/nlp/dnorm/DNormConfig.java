@@ -2,34 +2,39 @@ package de.dfki.nlp.dnorm;
 
 import java.io.File;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
-import com.sun.istack.internal.NotNull;
+import org.springframework.validation.annotation.Validated;
 
 import lombok.Data;
 
 @Configuration
 @ConfigurationProperties(prefix = "dnorm")
 @Data
+@Validated
 public class DNormConfig {
 
-    @NotNull
-    String downloadUrl;
+    @NotBlank
+    @URL
+    private String downloadUrl;
+
+    @NotBlank
+    private String downloadFileName;
 
     @NotNull
-    String downloadFileName;
+    private File dataDirectory;
 
     @NotNull
-    File dataDirectory;
+    private File unpackedDirectory;
+
+    @NotBlank
+    private String lexiconFilename;
 
     @NotNull
-    File unpackedDirectory;
-
-    @NotNull
-    String lexiconFilename;
-
-    @NotNull
-    File matrixFilename;
+    private File matrixFilename;
 
 }
