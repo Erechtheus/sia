@@ -15,6 +15,29 @@
 			<appender-ref ref="FILE"/>
 			<appender-ref ref="CONSOLE"/>
 		</root>
+
+
+	</springProfile>
+
+	<springProfile name="driver">
+
+		<appender name="QUEUE_STATS"
+				  class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<encoder>
+				<pattern>${FILE_LOG_PATTERN}</pattern>
+			</encoder>
+			<file>driver.log</file>
+			<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+				<fileNamePattern>driver-consumer.log.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+				<maxFileSize>${LOG_FILE_MAX_SIZE:-10MB}</maxFileSize>
+				<maxHistory>${LOG_FILE_MAX_HISTORY:-0}</maxHistory>
+			</rollingPolicy>
+		</appender>
+
+		<logger name="de.dfki.nlp.SiaPubmedAnnotator" level="DEBUG">
+			<appender-ref ref="QUEUE_STATS" />
+		</logger>
+
 	</springProfile>
 
 </configuration>

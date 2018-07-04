@@ -28,11 +28,11 @@ A PDF version is freely available [here](http://www.biocreative.org/media/store/
 
 > If you want to skip the RabbitMQ installation, for convenience, you can just start it via maven (this might not work on your machine)
 
-     ./mvnw rabbitmq:start
+    ./mvnw rabbitmq:start
 
 > And issue the following to tear down RabbitMQ afterwards
 
-     ./mvnw rabbitmq:stop
+    ./mvnw rabbitmq:stop
 
 To start the system in development mode issue
 
@@ -94,7 +94,16 @@ Check [application.properties](https://github.com/Erechtheus/sia/blob/master/src
 
  
 
-## Available Annotators
+Available Annotators
+====================
+
+* [BannerNER](#BannerNER)
+* [DiseasesNER](#DiseasesNER)
+* [Linnaeus](#Linnaeus)
+* [MirNER](#MirNER)
+* [SETH](#SETH)
+* [ChemSpot](#ChemSpot-(external))
+* [DNorm (external)](#DNorm-(external))
 
 #### BannerNER
 
@@ -110,24 +119,26 @@ Species name recognition and normalization software.
 
 <http://linnaeus.sourceforge.net/>
 
-### MirNER
-mirNer is a simple regex based tool to detect MicroRna mentions in text, following the mi-RNA definition of Victor Ambroset al., (2003). A uniform system for microRNA annotation. RNA 2003 9(3):277-279.
+#### MirNER
+mirNer is a simple regex based tool to detect MicroRna mentions in text, following the mi-RNA definition of Victor Ambroset al., (2003). 
+A uniform system for microRNA annotation. RNA 2003 9(3):277-279.
 
 <https://github.com/Erechtheus/mirNer>
 
-### SETH
-SNP Extraction Tool for Human Variations
+#### SETH
+SNP Extraction Tool for Human Variations.
+
 SETH is a software that performs named entity recognition (NER) of genetic variants (with an emphasis on single nucleotide polymorphisms (SNPs) and other short sequence variations) from natural language texts. 
 
 <https://rockt.github.io/SETH/>
 
-### ChemSpot (external)
+#### ChemSpot (external)
 ChemSpot is a named entity recognition tool for identifying mentions of chemicals in natural language texts, including trivial names, drugs, abbreviations, molecular formulas and IUPAC entities.
 
 <https://www.informatik.hu-berlin.de/de/forschung/gebiete/wbi/resources/chemspot/chemspot>
 
 
-### DNorm (external)
+#### DNorm (external)
 DNorm is an automated method for determining which diseases are mentioned in biomedical text, the task of disease normalization. Diseases have a central role in many lines of biomedical research, making this task important for many lines of inquiry, including etiology (e.g. gene-disease relationships) and clinical aspects (e.g. diagnosis, prevention, and treatment).
  
 <https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/tmTools/DNorm.html>
