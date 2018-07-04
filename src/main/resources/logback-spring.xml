@@ -21,12 +21,15 @@
 
 	<springProfile name="driver">
 
+
+		<springProperty name="concurrentConsumer" source="server.concurrentConsumer"/>
+
 		<appender name="QUEUE_STATS"
 				  class="ch.qos.logback.core.rolling.RollingFileAppender">
 			<encoder>
 				<pattern>${FILE_LOG_PATTERN}</pattern>
 			</encoder>
-			<file>driver.log</file>
+			<file>driver-${concurrentConsumer}-consumer.log</file>
 			<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
 				<fileNamePattern>driver-consumer.log.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
 				<maxFileSize>${LOG_FILE_MAX_SIZE:-10MB}</maxFileSize>
