@@ -5,10 +5,12 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = RabbitAutoConfiguration.class)
 @Configuration
 public class QueueAdapterDNorm {
 
@@ -24,6 +26,7 @@ public class QueueAdapterDNorm {
     }
 
     @Bean
+    @Profile("!no_rabbit")
     public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
         final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(converter());

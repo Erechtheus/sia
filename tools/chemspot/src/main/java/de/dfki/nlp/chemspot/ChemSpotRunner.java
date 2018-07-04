@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 import java.util.List;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -15,6 +14,11 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -70,8 +74,8 @@ public class ChemSpotRunner {
         File targetFile = new File(location, "chemspot-2.0.zip");
 
         if (!location.exists() || !targetFile.exists()) {
-            log.info("Downloading from {}", downloadLocation);
-            unpackArchive(new URL(downloadLocation), targetFile, location);
+            log.info("Downloading data from {}", downloadLocation);
+            unpackArchive(downloadLocation, targetFile, location);
         } else {
             log.info("Reusing chemspot-data from {}", location.getAbsolutePath());
         }
@@ -85,18 +89,24 @@ public class ChemSpotRunner {
      * @return the file to the url
      * @throws IOException
      */
-    private File unpackArchive(URL url, File downloadFile, File targetDir)
+    private File unpackArchive(String url, File downloadFile, File targetDir)
             throws IOException, ArchiveException {
         if (!targetDir.exists()) {
             targetDir.mkdirs();
         }
 
         if (!downloadFile.exists()) {
-            try (InputStream in = new BufferedInputStream(url.openStream(), 1024)) {
-                // make sure we get the actual file
-                OutputStream out = new FileOutputStream(downloadFile);
-                IOUtils.copy(in, out);
-                log.info("Downloading done, unpacking");
+            try (CloseableHttpClient httpclient = HttpClients.custom().setSSLHostnameVerifier(
+                    new NoopHostnameVerifier()).build()) {
+                HttpGet httpget = new HttpGet(url);
+                try (CloseableHttpResponse response = httpclient.execute(httpget)) {
+
+                    InputStream in = response.getEntity().getContent();
+                    OutputStream out = new FileOutputStream(downloadFile);
+                    IOUtils.copy(in, out);
+                    // make sure we get the actual file
+                    log.info("Downloading done, unpacking");
+                }
             }
         }
 

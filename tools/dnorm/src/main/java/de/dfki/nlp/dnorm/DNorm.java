@@ -15,12 +15,15 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.stereotype.Component;
 
 import com.google.common.io.Resources;
@@ -56,15 +59,14 @@ public class DNorm {
 
     private final SentenceBreaker breaker;
 
-    private final String downloadLocation;
+    private final DNormConfig dNormConfig;
 
     private SynonymTrainer syn;
 
     private Tokenizer tokenizer;
 
-    public DNorm(@Value("${dnorm.downloadurl}") String downloadLocation) {
-
-        this.downloadLocation = downloadLocation;
+    public DNorm(DNormConfig dNormConfig) {
+        this.dNormConfig = dNormConfig;
 
         try {
             this.downloadAndUnzipFiles();
@@ -72,17 +74,14 @@ public class DNorm {
             throw new IllegalStateException(e);
         }
 
-        String lexiconFilename = "dnorm-data/DNorm-0.0.7/data/CTD_diseases.tsv";
-        String matrixFilename = "dnorm-data/DNorm-0.0.7/output/simmatrix_NCBIDisease_e4.bin";
-
         // Do the setup
         DiseaseNameAnalyzer analyzer = DiseaseNameAnalyzer.getDiseaseNameAnalyzer(true, true, false,
                 true);
         MEDICLexiconLoader loader = new MEDICLexiconLoader();
         Lexicon lex = new Lexicon(analyzer);
-        loader.loadLexicon(lex, lexiconFilename);
+        loader.loadLexicon(lex, dNormConfig.lexiconFilename);
         lex.prepare();
-        SynonymMatrix matrix = FullRankSynonymMatrix.load(new File(matrixFilename));
+        SynonymMatrix matrix = FullRankSynonymMatrix.load(dNormConfig.matrixFilename);
         syn = new SynonymTrainer(lex, matrix, 1000);
 
         try {
@@ -185,14 +184,13 @@ public class DNorm {
     }
 
     private void downloadAndUnzipFiles() throws IOException, ArchiveException {
-        File location = new File("dnorm-data");
-        File targetFile = new File(location, "DNorm-0.0.7.tgz");
+        File targetFile = new File(dNormConfig.dataDirectory, dNormConfig.downloadFileName);
 
-        if (!location.exists() || !targetFile.exists()) {
-            log.info("Downloading from {}", downloadLocation);
-            unpackArchive(new URL(downloadLocation), targetFile, location);
+        if (!dNormConfig.dataDirectory.exists() || !targetFile.exists()
+                || !dNormConfig.unpackedDirectory.exists()) {
+            unpackArchive(dNormConfig.downloadUrl, targetFile, dNormConfig.dataDirectory);
         } else {
-            log.info("Reusing dnorm-data from {}", location.getAbsolutePath());
+            log.info("Reusing dnorm-data from {}", dNormConfig.dataDirectory.getAbsolutePath());
         }
     }
 
@@ -204,18 +202,25 @@ public class DNorm {
      * @return the file to the url
      * @throws IOException
      */
-    private File unpackArchive(URL url, File downloadFile, File targetDir)
+    private File unpackArchive(String url, File downloadFile, File targetDir)
             throws IOException, ArchiveException {
         if (!targetDir.exists()) {
             targetDir.mkdirs();
         }
 
         if (!downloadFile.exists()) {
-            try (InputStream in = new BufferedInputStream(url.openStream(), 1024)) {
-                // make sure we get the actual file
-                OutputStream out = new FileOutputStream(downloadFile);
-                IOUtils.copy(in, out);
-                log.info("Downloading done, unpacking");
+            log.info("Downloading data from {}", url);
+            try (CloseableHttpClient httpclient = HttpClients.custom().setSSLHostnameVerifier(
+                    new NoopHostnameVerifier()).build()) {
+                HttpGet httpget = new HttpGet(url);
+                try (CloseableHttpResponse response = httpclient.execute(httpget)) {
+
+                    InputStream in = response.getEntity().getContent();
+                    OutputStream out = new FileOutputStream(downloadFile);
+                    IOUtils.copy(in, out);
+                    // make sure we get the actual file
+                    log.info("Downloading done, unpacking");
+                }
             }
         }
 
@@ -240,8 +245,7 @@ public class DNorm {
         }
 
         try (ArchiveInputStream input = new ArchiveStreamFactory().createArchiveInputStream(
-                new BufferedInputStream(
-                        new GzipCompressorInputStream(new FileInputStream(theFile))))) {
+                new BufferedInputStream(new FileInputStream(theFile)))) {
             ArchiveEntry entry = null;
             while ((entry = input.getNextEntry()) != null) {
                 if (!input.canReadEntryData(entry)) {
@@ -264,6 +268,8 @@ public class DNorm {
                 }
             }
         }
+
+        log.info("unpaked data into {}", targetDir);
 
         return theFile;
     }

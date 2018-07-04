@@ -102,7 +102,18 @@
             <systemPath>${basedir}/lib/trove-3.0.3.jar</systemPath>
         </dependency>
 
-        <!-- DNORM also included trve 3.x -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- DNORM also included trove 3.x -->
 
         <dependency>
             <groupId>cc.mallet</groupId>
