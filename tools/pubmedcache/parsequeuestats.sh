@@ -1,7 +1,7 @@
 #!/bin/sh
 # Parses the queue stats log
 # 2018-07-02 20:38:11.973 DEBUG 23063 --- [ask-scheduler-6] de.dfki.nlp.SiaPubmedAnnotator           : Message counts - input queue: 2184 output queue: 0
-regex="([0-9]+-[0-9]+-[0-9]+ [0-9]+:[0-9]+:[0-9]+).*input .* ([0-9]+) output .* ([0-9]+)"
+regex="([0-9]+-[0-9]+-[0-9]+ [0-9]+:[0-9]+:[0-9]+).*input queue: ([0-9]+) output queue: *([0-9]+)"
 echo "Elapsed\tInputQueue\tOutputQueue"
 while read line
 do

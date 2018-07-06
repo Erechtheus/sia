@@ -24,7 +24,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.google.common.io.Resources;
@@ -92,6 +91,8 @@ public class DNorm {
         }
 
         breaker = new SentenceBreaker();
+
+        log.info("DNorm initialized, waiting for requests");
 
     }
 
