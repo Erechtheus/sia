@@ -1,6 +1,14 @@
 package de.dfki.nlp.loader;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+
 import com.google.common.collect.Lists;
+
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.domain.IdList;
 import de.dfki.nlp.domain.ParsedInputText;
@@ -9,12 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -37,11 +39,10 @@ public class AbstractServerFetcher extends AbstractDocumentFetcher {
             ParsedInputText[] parsedInputText = retryHandler.retryablePost(annotatorConfig.abstractserver.url, new MultiRequest(idList.getIds()), ParsedInputText[].class);
 
             if (parsedInputText != null) {
-                return Arrays.stream(parsedInputText).map(m -> {
+                return Arrays.stream(parsedInputText).peek(m -> {
                     // move text to abstract text
                     m.setAbstractText(m.getText());
                     m.setText(null);
-                    return m;
                 }).collect(Collectors.toList());
             }
 

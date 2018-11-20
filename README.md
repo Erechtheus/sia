@@ -29,6 +29,8 @@ A PDF version is freely available [here](http://www.biocreative.org/media/store/
 > If you want to skip the RabbitMQ installation, for convenience, you can just start it via maven (this might not work on your machine)
 
     ./mvnw rabbitmq:start
+    
+   Check <http://localhost:15672/> for the management interface, default login: guest/guest
 
 > And issue the following to tear down RabbitMQ afterwards
 
@@ -156,7 +158,7 @@ Communication is handled via a dedicated queue for each handler respectively.
 - Start ChemSpot
 
       ./mvnw -f tools/chemspot/pom.xml package
-      java -Xmx12g -jar tools/chemspot/target/chemspot-0.0.1-SNAPSHOT.jar
+      java -Xmx16g -jar tools/chemspot/target/chemspot-0.0.1-SNAPSHOT.jar
 
 
 ## Tagging PubMed Dumps

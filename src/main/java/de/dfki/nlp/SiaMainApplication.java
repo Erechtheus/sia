@@ -46,7 +46,7 @@ public class SiaMainApplication {
             parameters.setDocuments(
                     Lists.newArrayList(new ServerRequest.Document("CA2073855C", "Patent Server"),
                             new ServerRequest.Document("24218123", "PUBMED"),
-                            new ServerRequest.Document("BC1403855C", "PMC"),
+                            new ServerRequest.Document("20255", "PMC"),
                             new ServerRequest.Document("PMC20255", "PMC"),
                             new ServerRequest.Document("US20080038365", "Patent Server"),
                             new ServerRequest.Document("WO2010032704A1", "Patent Server"),
@@ -61,8 +61,6 @@ public class SiaMainApplication {
 
             parameters.setCommunication_id(-1);
             parameters.setTypes(Lists.newArrayList(enabledAnnotators.enabledPredicationTypes()));
-            // TODO re-enable
-            // parameters.setExpired(Date.from(ZonedDateTime.now(ZoneId.of("Europe/Berlin")).plusMinutes(30).toInstant()));
             message.setParameters(parameters);
             message.setMethod(ServerRequest.Method.getAnnotations);
             // send one test message

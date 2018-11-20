@@ -118,8 +118,6 @@ public class FlowHandler {
 
                     failedMessage.setServerErrorCause(payload.getMessage());
 
-                    payload.getCause().printStackTrace();
-
                     // try to replicate most of the message and the error
                     if (payload.getCause() instanceof HttpClientErrorException) {
                         HttpClientErrorException cause = (HttpClientErrorException) payload.getCause();
@@ -179,7 +177,9 @@ public class FlowHandler {
                 .from(Amqp.inboundAdapter(connectionFactory, MessagingConfig.queueOutput)
                         .messageConverter(messageConverter))
                 // do nothing
-                .handle(message -> {})
+                .handle(message -> {
+                    System.out.println(message.getPayload());
+                })
                 .get();
     }
 
