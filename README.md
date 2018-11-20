@@ -184,7 +184,7 @@ sia.annotators.chemspot=false
 
 Finally start the `SiaPubmedAnnotator` class with the _driver_ and _backend_ profile enabled.
 The _driver_  profile ensures that output is collected into the directory `annotated`,
-while the _backend_ profile ensures that the any internal annotators are started as well.
+while the _backend_ profile ensures that the internal annotators are started as well.
 
 
 ```bash
