@@ -9,16 +9,20 @@ Annotations for mutation mentions are generated using [SETH](https://github.com/
 ## Citation
 To cite SIA, please use the following reference:
 ```bibtex
-@InProceedings{Kirschnick2017,
-  Title                    = {SIA: Scalable Interoperable Annotation Server},
-  Author                   = {Johannes Kirschnick and Philippe Thomas},
-  Booktitle                = {Proceedings of the BioCreative V.5 Challenge Evaluation Workshop.},
-  Year                     = {2017},
-  Address                  = {Barcelona, Spain},
-  Pages                    = {138--145}
+@Article{Kirschnick2018,
+  title     = {{SIA:} a scalable interoperable annotation server for biomedical named entities},
+  author    = {Johannes Kirschnick and Philippe Thomas and Roland Roller and Leonhard Hennig},
+  journal   = {Journal of Cheminformatics},
+  volume    = {10},
+  number    = {1},
+  pages     = {63:1--63:7},
+  year      = {2018},
+  month     = {Dec},
+  url       = {https://doi.org/10.1186/s13321-018-0319-2},
+  doi       = {10.1186/s13321-018-0319-2}
 }
 ```
-A PDF version is freely available [here](http://www.biocreative.org/media/store/files/2017/BioCreative_V5_paper19.pdf)
+A PDF version of the paper is freely available [here](https://link.springer.com/article/10.1186%2Fs13321-018-0319-2)
 
 
 ## Getting Started
@@ -41,7 +45,7 @@ To start the system in development mode issue
     ./mvnw spring-boot:run
 
 This starts the backend without submitting results to the tips server, instead results are printed to the console.
-The server is listening on port `8080` per default.
+The server is listening on port `8080` by default.
 
 ### getAnnotation
 
@@ -49,15 +53,13 @@ Issue the following `curl` request to trigger a new annotation request with a sa
 
     curl -vX POST http://localhost:8080/call -d @src/test/resources/samplepayloadGetannotations.json --header "Content-Type: application/json"
 
+and watch the console for results.
+
 ### getStatus
 
 To trigger a get status report, use the following `curl` request
 
     curl -vX POST http://localhost:8080/call -d @src/test/resources/sampleplayloadGetStatus.json --header "Content-Type: application/json"
-
-#### close hanging requests
-
-    curl -H "Content-Type: application/json" -X POST -d  '' http://www.becalm.eu/api/saveAnnotations/JSON?apikey={apikey}&communicationId={communicationId}
 
 
 ## Adding custom annotators

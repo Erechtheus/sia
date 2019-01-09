@@ -1,5 +1,24 @@
 package de.dfki.nlp.rest;
 
+import static de.dfki.nlp.domain.exceptions.Errors.NEED_PARAMETERS;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.validation.Valid;
+
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.google.common.base.MoreObjects;
+
 import de.dfki.nlp.config.AnnotatorConfig;
 import de.dfki.nlp.config.MessagingConfig;
 import de.dfki.nlp.domain.exceptions.BaseException;
@@ -9,19 +28,6 @@ import de.dfki.nlp.domain.rest.Response;
 import de.dfki.nlp.domain.rest.ServerRequest;
 import de.dfki.nlp.domain.rest.ServerState;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static de.dfki.nlp.domain.exceptions.Errors.NEED_PARAMETERS;
 
 @RestController
 @Slf4j
@@ -52,13 +58,15 @@ public class RestEndpoint {
                 Set<String> collect = serverRequest.getParameters().getDocuments().stream().map(ServerRequest.Document::getSource).collect(Collectors.toSet());
 
 
-                // calculate how long we have time to process in seconds
-                Instant expirey = serverRequest.getParameters().getExpired().toInstant();
-                Duration duration = Duration.between(Instant.now(), expirey);
+                // calculate how long we have time to process in seconds - by default 120s
+                Date expireAt = MoreObjects.firstNonNull(
+                        serverRequest.getParameters().getExpired(),
+                        DateUtils.addSeconds(new Date(), 120));
+                Duration duration = Duration.between(Instant.now(), expireAt.toInstant());
 
                 log.info("We have {} seconds to fulfill the request [{}]", duration.getSeconds(), serverRequest.getParameters().getCommunication_id());
 
-                log.info("Request to analyze {} documents with types : {} from {} for id [{}] - with expiry date [{}]", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id(), serverRequest.getParameters().getExpired());
+                log.info("Request to analyze {} documents with types : {} from {} for id [{}] - with expiry date [{}]", serverRequest.getParameters().getDocuments().size(), serverRequest.getParameters().getTypes(), collect.toString(), serverRequest.getParameters().getCommunication_id(), expireAt);
 
                 // calculate ttl - set it to 1 month ...
                 String ttlInMs = String.valueOf(TimeUnit.MILLISECONDS.convert(30, TimeUnit.DAYS));

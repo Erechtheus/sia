@@ -6,14 +6,14 @@
   "parameters" : {
     "documents":[
       {"document_id":"CA2073855C","source":"Patent server"},
-      {"document_id":"BC1403855C","source":"PMC"},
-      {"document_id":"BC1403854C","source":"PUBMED"},
+      {"document_id":"24218123","source":"PUBMED"},
+      {"document_id":"20255","source":"PMC"},
+      {"document_id":"PMC20255","source":"PMC"},
       {"document_id":"PMC1234567","source":"PMC"},
       {"document_id":"10323730","source":"Abstract Server"},
       {"document_id":"10089940","source":"Abstract Server"}
     ],
     "types" : ["DISEASE", "MUTATION", "MIRNA"],
-    "expired": "2017-02-22T03:14:00+01:00",
     "communication_id":1581
   }
 }
